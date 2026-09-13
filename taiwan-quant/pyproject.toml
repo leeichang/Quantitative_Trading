@@ -22,6 +22,11 @@ dev = [
     "black>=24.0",
 ]
 
+[tool.setuptools.packages.find]
+# reports/ 是報表輸出目錄、不是套件；不明示 include 會讓 setuptools
+# 在 flat-layout 下因「多個頂層套件」而拒絕建置。
+include = ["taiwan_quant*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

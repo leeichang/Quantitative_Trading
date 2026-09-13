@@ -16,6 +16,7 @@ backtrader>=1.9.78
 pandas>=2.0.0
 numpy>=1.24.0
 httpx>=0.24.0
+yfinance>=0.2.40    # src/adapters/yfinance.py 還原股價來源（原本漏列）
 
 # WebSocket
 websockets>=11.0.0
