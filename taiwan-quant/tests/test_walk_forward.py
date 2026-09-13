@@ -191,8 +191,8 @@ def test_embargo_reduces_training_samples_measurably() -> None:
 
 
 @pytest.mark.unit
-def test_explicit_oos_start_never_enters_training_set() -> None:
-    """凍結切分後，OOS 決策不得在後續 fold 被吸回訓練集。"""
+def test_explicit_oos_start_keeps_expanding_training_by_default() -> None:
+    """指定切分點不改變 walk-forward：已揭曉的前期 OOS 會進入後續訓練。"""
     d = dates(240)
     requested = d[180] - pd.Timedelta(days=1)
     folds = list(walk_forward_folds(
@@ -206,7 +206,25 @@ def test_explicit_oos_start_never_enters_training_set() -> None:
     ))
 
     assert folds[0][1][0] == d[180]
-    assert all(day < d[180] for train, _ in folds for day in train)
+    assert [len(train) for train, _ in folds] == [168, 180, 192, 204, 216]
+
+
+@pytest.mark.unit
+def test_freeze_model_keeps_training_at_initial_oos_cutoff() -> None:
+    """只有明確指定 freeze_model，校準資料才永久固定。"""
+    d = dates(240)
+    folds = list(walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=d[180],
+        dev_end=d[179],
+        freeze_model=True,
+    ))
+
+    assert [len(train) for train, _ in folds] == [168, 168, 168, 168, 168]
     assert all(train[-1] == d[167] for train, _ in folds)
 
 
