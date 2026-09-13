@@ -82,6 +82,10 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_return_calibrator,
 )
 from taiwan_quant.validation.stats import deflated_sharpe_ratio  # noqa: E402
+from taiwan_quant.validation.walk_forward import (  # noqa: E402
+    embargo_periods,
+    walk_forward_folds,
+)
 
 PULLBACK_QUANTILE = 0.80
 """移動停損取歷史最大回落的第幾分位。見 labeling/trail_width.py"""
@@ -320,6 +324,7 @@ def run_walk_forward(
     tiers: dict[str, Tier],
     rng: np.random.Generator,
     edge_z: float,
+    horizon: int,
 ) -> tuple[
     list[tuple[pd.Timestamp, Decision, float]],
     list[tuple[pd.Timestamp, Decision, float]],
@@ -361,10 +366,17 @@ def run_walk_forward(
     calibration_failures = 0
     oos_start = dates[first_train]
 
-    cursor = first_train
-    while cursor + test_span <= len(dates):
-        train_dates = dates[:cursor]
-        test_dates = dates[cursor : cursor + test_span]
+    # **標籤隔離（embargo）。** 訓練集尾端的決策，其標籤要等 horizon
+    # 天後才揭曉——那些天落在測試段內，等於讓校準器看過測試期的走勢。
+    # 實測污染比例 8.0%（第一個 fold）~ 2.4%（最後一個）。
+    # 見 taiwan_quant/validation/walk_forward.py
+    for train_dates, test_dates in walk_forward_folds(
+        dates,
+        first_train=first_train,
+        test_span=test_span,
+        horizon=horizon,
+        stride=DECISION_STRIDE,
+    ):
         folds += 1
 
         train_decisions = [d for dt in train_dates for d in by_date[dt]]
@@ -377,7 +389,6 @@ def run_walk_forward(
             )
         except CalibrationError:
             calibration_failures += 1
-            cursor += test_span
             continue
 
         # 每箱的標準誤，用來判斷優勢是否顯著
@@ -413,8 +424,6 @@ def run_walk_forward(
             # 槽位競爭。給隨機分數，讓組合層的排序也是隨機的。
             for d in candidates:
                 random_signals.append((decision_date, d, float(rng.random())))
-
-        cursor += test_span
 
     return strategy, random_signals, oos_start, folds, calibration_failures
 
@@ -569,7 +578,7 @@ def main() -> None:
             rng = np.random.default_rng(RANDOM_SEED)
 
             strat_sig, rand_sig, oos_start, folds, failures = run_walk_forward(
-                by_date, tiers, rng, args.edge_z)
+                by_date, tiers, rng, args.edge_z, horizon)
 
             if not strat_sig or oos_start is None:
                 rows.append({"family": family.name, "horizon": horizon,
