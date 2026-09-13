@@ -219,6 +219,27 @@ scripts/record_forward.py --settle  # 對已到期的預測回填實際報酬
 
 ---
 
+## 實作補充：切分點與模型凍結是兩件事
+
+`--oos-start` 只指定 OOS 從哪個決策日開始，預設維持擴張式
+walk-forward：前一個 fold 的結果揭曉後，可成為下一個 fold 的訓練資料。
+
+```bash
+# 實際持續運作方式：訓練集隨 fold 擴張（預設）
+.venv/bin/python scripts/validate_oos_trailing.py \
+  --horizons 60 --oos-start 2024-01-02
+
+# 研究模型完全不更新時的衰退：必須明確指定
+.venv/bin/python scripts/validate_oos_trailing.py \
+  --horizons 60 --oos-start 2024-01-02 --freeze-model
+```
+
+`FROZEN_DATA_START = 2026-09-14` 凍結的是未來資料存取，不是模型訓練
+窗口。現有資料只到 2026-09-11，所以目前不會自然觸發守門；等新增
+2026-09-14 起的資料後，才需要明確解鎖並留下理由。
+
+---
+
 ## 驗收清單
 
 ```

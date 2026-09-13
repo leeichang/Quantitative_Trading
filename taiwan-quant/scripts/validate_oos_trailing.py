@@ -307,6 +307,7 @@ def run_walk_forward(
     horizon: int,
     oos_start_override: pd.Timestamp | None = None,
     dev_end: pd.Timestamp | None = None,
+    freeze_model: bool = False,
 ) -> tuple[
     list[tuple[pd.Timestamp, Decision, float]],
     list[tuple[pd.Timestamp, Decision, float]],
@@ -368,6 +369,7 @@ def run_walk_forward(
         stride=DECISION_STRIDE,
         oos_start=oos_start_override,
         dev_end=dev_end,
+        freeze_model=freeze_model,
     ):
         folds += 1
 
@@ -472,12 +474,17 @@ def main() -> None:
     parser.add_argument(
         "--dev-end",
         default=None,
-        help="開發集結束日（ISO）。之後的資料只在 --oos-start 指定時使用",
+        help="第一個 OOS fold 的開發集結束日（ISO）；後續預設仍隨 fold 擴張",
     )
     parser.add_argument(
         "--oos-start",
         default=None,
         help="OOS 起始日（ISO）。指定時覆蓋由 FIRST_TRAIN_DAYS 推導的起點",
+    )
+    parser.add_argument(
+        "--freeze-model",
+        action="store_true",
+        help="固定第一個 OOS fold 的訓練集，用來量測模型不更新時的衰退",
     )
     parser.add_argument("--edge-z", type=float, default=DEFAULT_EDGE_Z)
     parser.add_argument("--slots", type=int, default=TOP_N)
@@ -505,6 +512,8 @@ def main() -> None:
     )
     if dev_end is not None and oos_start_override is None:
         parser.error("--dev-end 必須與 --oos-start 一起使用")
+    if args.freeze_model and oos_start_override is None:
+        parser.error("--freeze-model 必須與 --oos-start 一起使用")
     if dev_end is not None and dev_end >= oos_start_override:
         parser.error("--dev-end 必須早於 --oos-start")
     if args.unlock_frozen and not (args.frozen_reason or "").strip():
@@ -520,6 +529,9 @@ def main() -> None:
           f"每個 fold 測試 {TEST_WINDOW_DAYS} 日")
     print(f"移動停損分位 {PULLBACK_QUANTILE:.0%}｜優勢門檻 {args.edge_z:.1f} 個標準誤"
           f"｜組合槽位 {args.slots}｜標的池 {args.universe_size} 檔/季")
+    if oos_start_override is not None:
+        mode = "固定模型（不擴張訓練集）" if args.freeze_model else "擴張式 walk-forward"
+        print(f"OOS 切分模式：{mode}")
     if oos_start_override is not None and oos_start_override < pd.Timestamp("2026-09-14"):
         print("⚠️  此評估區間先前已被看過 7 次，不是全新 OOS；只能用來否定，不能證明。")
     print()
@@ -619,6 +631,7 @@ def main() -> None:
                 horizon,
                 oos_start_override=oos_start_override,
                 dev_end=dev_end,
+                freeze_model=args.freeze_model,
             )
 
             if not strat_sig or oos_start is None:

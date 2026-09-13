@@ -79,6 +79,7 @@ def walk_forward_folds(
     stride: int,
     oos_start: pd.Timestamp | None = None,
     dev_end: pd.Timestamp | None = None,
+    freeze_model: bool = False,
 ) -> Iterator[tuple[list[pd.Timestamp], list[pd.Timestamp]]]:
     """
     產生滾動擴張窗口的 (訓練日, 測試日)，**訓練集已做標籤隔離**。
@@ -90,8 +91,9 @@ def walk_forward_folds(
         horizon: 持有交易日數
         stride: 決策間隔交易日數
         oos_start: 指定時，以最接近且不早於此日的決策日開始測試
-        dev_end: 開發集最後日期；指定 OOS 時，後續 fold 不會把它之後的
-            決策吸回訓練集
+        dev_end: 初始開發集最後日期；後續 fold 預設仍依 walk-forward 擴張
+        freeze_model: True 時永久固定在第一個 OOS fold 的訓練集；用來量測
+            模型不更新時的衰退，不是一般 walk-forward
 
     Yields:
         (訓練日清單, 測試日清單)
@@ -110,9 +112,12 @@ def walk_forward_folds(
         raise WalkForwardError("決策日必須依日期升冪排序")
     if dev_end is not None and oos_start is None:
         raise WalkForwardError("--dev-end 只能與 --oos-start 一起使用")
+    if freeze_model and oos_start is None:
+        raise WalkForwardError("--freeze-model 只能與 --oos-start 一起使用")
 
     gap = embargo_periods(horizon, stride)
-    training_limit: int | None = None
+    initial_cursor: int | None = None
+    initial_train_end: int | None = None
     if oos_start is None:
         cursor = first_train
     else:
@@ -126,11 +131,13 @@ def walk_forward_folds(
         if cursor >= len(dates):
             raise WalkForwardError(f"OOS 起點 {requested.date()} 晚於所有決策日")
 
-        # 凍結點前最後 gap 期的標籤要用到 OOS 價格才能揭曉，因此不只
-        # 第一個 fold 要剔除；後續所有 fold 都必須永久維持同一截止點。
-        frozen_label_cutoff = cursor - gap
+        initial_cursor = cursor
+        # 第一個 OOS fold 必須剔除尾端 gap 期，避免尚未揭曉的標籤跨入
+        # 測試段。後續 fold 預設照 walk-forward 擴張；先前 OOS 在標籤
+        # 揭曉後成為訓練資料，這不是洩漏。
+        label_cutoff = cursor - gap
         if dev_end is None:
-            training_limit = frozen_label_cutoff
+            initial_train_end = label_cutoff
         else:
             development_end = pd.Timestamp(dev_end)
             if development_end >= dates[cursor]:
@@ -138,12 +145,22 @@ def walk_forward_folds(
                     f"開發集結束日 {development_end.date()} 必須早於 "
                     f"OOS 起點 {dates[cursor].date()}"
                 )
-            training_limit = min(
-                bisect_right(dates, development_end), frozen_label_cutoff
+            initial_train_end = min(
+                bisect_right(dates, development_end), label_cutoff
             )
 
     while cursor + test_span <= len(dates):
-        train_end = training_limit if training_limit is not None else cursor - gap
+        if initial_train_end is None or initial_cursor is None:
+            train_end = cursor - gap
+        elif freeze_model:
+            train_end = initial_train_end
+        else:
+            # 保留初始 dev_end 與 OOS 間的距離，同時每個 fold 納入已揭曉
+            # 的前一期測試資料，維持 expanding walk-forward 的實驗性質。
+            train_end = min(
+                cursor - gap,
+                initial_train_end + (cursor - initial_cursor),
+            )
         if train_end > 0:
             yield dates[:train_end], dates[cursor : cursor + test_span]
         cursor += test_span
