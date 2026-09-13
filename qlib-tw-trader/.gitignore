@@ -1,0 +1,91 @@
+# Claude
+.claude/
+
+# Sandbox (實驗性程式碼)
+sandbox/*
+!sandbox/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+data/*.db
+
+# Qlib export data
+data/qlib/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.key
+*.pem
+credentials.json
+
+# Trained model files
+data/models/
+
+# DVC (data version control - personal cloud config)
+.dvc/
+.dvcignore
+data/*.dvc
+
+# Personal research & docs (kept locally, not in git)
+reports/
+docs/*.md
+CLAUDE.md
+
+# Script outputs
+scripts/output/
+scripts/evaluate_crypto.py
+
+# Frontend build
+frontend/dist/

@@ -1,0 +1,95 @@
+/Volumes/Mac/Quantitative Trading/taiwan-quant/scripts/weekly_plan.py:130: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  aligned = pd.concat([stock_returns, market_returns], axis=1).dropna()
+/Volumes/Mac/Quantitative Trading/taiwan-quant/scripts/weekly_plan.py:130: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  aligned = pd.concat([stock_returns, market_returns], axis=1).dropna()
+/Volumes/Mac/Quantitative Trading/taiwan-quant/scripts/weekly_plan.py:130: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  aligned = pd.concat([stock_returns, market_returns], axis=1).dropna()
+========================================================================
+週頻交易計畫產生器
+========================================================================
+策略版本  momentum_baseline_tb5d@v0.2.0
+資金      400,000 TWD
+
+標的池來源  proxy
+  ⚠️  2026-09-11 無真實成分股快照，改用市值前 150 名**代理** 0050+0051，非實際成分股
+  ⚠️  代理名單以事後可得的市值排名重建，可能含 survivorship bias：若市值資料未涵蓋當期已退市個股，績效會被高估
+  ⚠️  流動性分層亦為代理（前 50 名視為 0050 級）
+
+載入 40 檔日 K ...
+實際取得 40 檔
+
+擬合校準器（訓練期至 2025-12-31）...
+  校準樣本 10,243 筆
+
+========================================================================
+機率校準可靠度報告
+========================================================================
+
+總樣本      10,243
+基礎 P(+1)  0.1867（模型必須勝過這個才有價值）
+分數範圍    [0.2378, 0.7984]
+每箱門檻    30 筆
+
+────────────────────────────────────────────────────────────────────────
+分數區間                       樣本數    實際 P(+1)        落差  備註
+────────────────────────────────────────────────────────────────────────
+[0.238, 0.308]             100      0.1900   +0.0828  
+[0.308, 0.378]             623      0.1862   +0.1567  ⚠️ 過度自信
+[0.378, 0.448]            1475      0.1654   +0.2476  ⚠️ 過度自信
+[0.448, 0.518]            2101      0.1880   +0.2951  ⚠️ 過度自信
+[0.518, 0.588]            2145      0.1599   +0.3932  ⚠️ 過度自信
+[0.588, 0.658]            1902      0.2061   +0.4171  ⚠️ 過度自信
+[0.658, 0.728]            1335      0.2090   +0.4843  ⚠️ 過度自信
+[0.728, 0.798]             562      0.2206   +0.5428  ⚠️ 過度自信
+────────────────────────────────────────────────────────────────────────
+
+⚠️  偵測到過度自信：分數明顯高於實際機率。
+    未校準時這些分數會通過進場門檻，實際勝率不足以覆蓋成本。
+
+========================================================================
+
+產生訊號 ...
+  產生 29 個訊號｜略過 {'資料不足': 0, '柵欄或校準失敗': 11}
+
+────────────────────────────────────────────────────────────────────────
+選股結果
+────────────────────────────────────────────────────────────────────────
+本週無符合條件的標的。
+  ⚠️  所有候選都未通過進場門檻或風險紀律，本週不推播
+
+剔除 29 檔：{'below_entry_threshold': 29}
+
+
+============================================================
+[dry-run，以下訊息未實際發送]
+============================================================
+📊 下週交易計畫 ｜ 2026W37
+momentum_baseline_tb5d@v0.2.0
+資料截至 2026-09-11
+標的池：市值排名代理（40 檔）
+
+本週無符合條件的標的。
+  ⚠️  所有候選都未通過進場門檻或風險紀律，本週不推播
+
+────────────────────────────────
+🔎 對照組（樣本外）
+　⚠️ 對照組尚未接入：本版為規則式基準，未跑 Walk-Forward
+　　 正式推播前必須並列 買進持有 / 0050 / 隨機進場
+
+────────────────────────────────
+⚠️ 僅供研究，非投資建議。系統不下單。
+　回測績效不代表未來表現。
+============================================================
+
+========================================================================
+這份計畫的效力（誠實聲明）
+========================================================================
+  ✗ 使用規則式動能基準，**不是訓練過的模型**
+  ✓ 分數已用訓練期 triple-barrier 標籤校準為真實機率
+  ✗ 未跑 Walk-Forward，沒有樣本外驗證
+  ✗ 未並列對照組（買進持有 / 0050 / 隨機進場）
+  ✗ 未做 PBO / Deflated Sharpe 校正
+  ✓ 證明整條管線接得起來，各模組在真實資料上可運作
+
+  → 這是**管線驗證**，不是投資建議。
+========================================================================

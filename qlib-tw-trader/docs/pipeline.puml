@@ -1,0 +1,56 @@
+@startuml pipeline
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+
+skinparam activity {
+  BackgroundColor #F8F9FA
+  BorderColor #DEE2E6
+  FontColor #212529
+  DiamondBackgroundColor #FFF3CD
+  DiamondBorderColor #FFCA2C
+}
+
+title Trading Pipeline
+
+start
+
+partition "**Data**" #E3F2FD {
+  :Sync TWSE / FinMind / yfinance
+  (OHLCV, PER/PBR, institutional, margin, revenue);
+  :Store in **SQLite** (WAL mode);
+}
+
+partition "**Features**" #F1F8E9 {
+  :QlibExporter → .bin files;
+  :Compute **~300 factors**
+  Alpha158 (109) + Taiwan chips (107)
+  + interaction (50) + enhanced (37);
+}
+
+partition "**Training**" #FFF3E0 {
+  :Walk-Forward: **504d train** / 100d valid / 7d embargo;
+  :DoubleEnsemble (K=3 LightGBM)
+  + sample reweighting + feature selection;
+}
+
+partition "**Prediction**" #F3E5F5 {
+  :Load **T-1 features** (no T-day data);
+  :Cross-sectional ranking → Top-K signals
+  Label: close[T+3] / close[T+1] - 1;
+}
+
+partition "**Evaluation**" #E8F5E9 {
+  :Backtest: TopK / TopKDrop / HoldDrop;
+  :IC analysis + regime decomposition;
+  :Sharpe, MaxDD, excess return, t-stat;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,30 @@
+import { create } from 'zustand'
+
+type EntityType = 'factors' | 'models' | 'datasets' | 'backtests' | 'dashboard' | 'hyperparams' | 'walk_forward_backtests'
+
+interface DataState {
+  timestamps: Record<EntityType, number>
+  invalidate: (entity: EntityType | EntityType[]) => void
+}
+
+export const useDataStore = create<DataState>((set) => ({
+  timestamps: {
+    factors: Date.now(),
+    models: Date.now(),
+    datasets: Date.now(),
+    backtests: Date.now(),
+    dashboard: Date.now(),
+    hyperparams: Date.now(),
+    walk_forward_backtests: Date.now(),
+  },
+  invalidate: (entity) => {
+    const entities = Array.isArray(entity) ? entity : [entity]
+    set((state) => {
+      const newTimestamps = { ...state.timestamps }
+      for (const e of entities) {
+        newTimestamps[e] = Date.now()
+      }
+      return { timestamps: newTimestamps }
+    })
+  },
+}))

@@ -1,0 +1,88 @@
+@startuml architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor #F8F9FA
+  BorderColor #DEE2E6
+  FontColor #212529
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #ADB5BD
+  FontColor #495057
+  FontStyle bold
+}
+skinparam database {
+  BackgroundColor #FFF3CD
+  BorderColor #FFCA2C
+}
+
+top to bottom direction
+
+rectangle "**React Dashboard**\nVite + TailwindCSS + Zustand + Recharts" as FE #E3F2FD
+
+rectangle "**FastAPI Backend**" as BE #F1F8E9 {
+  rectangle "Interfaces" as iface {
+    [REST API] as api
+    [WebSocket] as ws
+  }
+
+  rectangle "Services" as svc {
+    [ModelTrainer\n+ Optuna] as trainer
+    [WalkForward\nBacktester] as wf
+    [Predictor] as pred
+    [SyncService] as sync
+    [DoubleEnsemble\n(ICDM 2020)] as de
+    [QlibExporter] as qexp
+  }
+
+  rectangle "Repositories" as repo {
+    [Data Access\n(SQLAlchemy)] as dal
+    [Factor Defs\n~300 factors] as factors
+  }
+
+  rectangle "Adapters" as adapt {
+    [TWSE] as twse
+    [FinMind] as fm
+    [yfinance] as yf
+  }
+}
+
+database "SQLite\n(WAL)" as db
+database "Qlib .bin" as qlib
+
+FE -down-> api : HTTP
+FE <-down-> ws : WebSocket
+
+api -down-> trainer
+api -down-> wf
+api -down-> pred
+api -down-> sync
+
+trainer -down-> de
+wf -down-> de
+pred -down-> de
+trainer -down-> qexp
+wf -down-> qexp
+
+sync -down-> twse
+sync -down-> fm
+sync -down-> yf
+
+trainer -down-> dal
+wf -down-> dal
+pred -down-> dal
+sync -down-> dal
+
+dal -down-> db
+qexp -down-> qlib
+de .down.> qlib : reads
+
+@enduml

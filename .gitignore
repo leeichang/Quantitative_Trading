@@ -1,0 +1,92 @@
+# ============================================================
+# Quantitative Trading — 根層 .gitignore
+# 原則：可由程式重建 / 網上重抓 / 本地生成的檔案，一律不入 git
+# ============================================================
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---------- Virtual Environment（pip/uv 可重建）----------
+.venv/
+env/
+venv/
+ENV/
+
+# ---------- 環境變數 / 密鑰（安全，切勿入 git）----------
+.env
+*.key
+*.pem
+credentials.json
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---------- 測試快取 / 覆蓋率 ----------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
+
+# ---------- 資料庫（可由 backfill 腳本重建，量大）----------
+# taiwan-quant/data/history.db（~1GB）、qlib-tw-trader/data/data.db（~47MB）
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+*.db.bak*
+*.db.backup*
+
+# ---------- 訓練模型 / Qlib 匯出（可重訓 / 重匯出）----------
+data/models/
+data/qlib/
+**/data/models/
+**/data/qlib/
+
+# ---------- Universe 快照（可重生）----------
+**/data/universe_history/
+
+# ---------- 日誌 ----------
+*.log
+
+# ---------- Frontend（npm install 重建）----------
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# ---------- Script 輸出 ----------
+**/scripts/output/
+
+# ---------- 工具設定（本地個人設定，不入 git）----------
+.claude/
+
+# ---------- DVC（個人雲端設定）----------
+.dvc/
+.dvcignore
+**/data/*.dvc
+
+# 保留：.planning/、docs/、reports/、所有原始碼、README、pyproject、requirements

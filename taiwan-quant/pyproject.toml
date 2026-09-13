@@ -1,0 +1,44 @@
+[project]
+name = "taiwan-quant"
+version = "0.1.0"
+description = "台股週頻 triple-barrier 量化研究系統（只出建議，不下單）"
+requires-python = ">=3.12"
+
+dependencies = [
+    "pandas>=2.2,<3.1",
+    "numpy>=1.26",
+    "pyarrow>=15.0",
+    "scipy>=1.12",
+    "lightgbm>=4.3",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "black>=24.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "unit: 單元測試（純函式，不碰 IO）",
+    "integration: 整合測試（讀資料庫或檔案）",
+    "slow: 耗時測試（回測、訓練）",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "ANN"]
+ignore = ["ANN101", "ANN102"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
