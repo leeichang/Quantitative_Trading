@@ -43,8 +43,11 @@ CREATE TABLE IF NOT EXISTS forward_predictions (
     due_date TEXT NOT NULL,
     realized_return REAL,
     settled_at TEXT,
-    PRIMARY KEY (predicted_at, family, horizon, stock_id)
+    PRIMARY KEY (predicted_at, family, horizon, stock_id),
+    UNIQUE (data_asof, strategy_version, family, horizon, stock_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS ux_forward_prediction_identity
+ON forward_predictions (data_asof, strategy_version, family, horizon, stock_id);
 """
 
 
@@ -52,7 +55,7 @@ def initialize_forward_store(db_path: Path) -> None:
     """建立前推預測表；不更動資料庫中的其他表。"""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as con:
-        con.execute(SCHEMA)
+        con.executescript(SCHEMA)
 
 
 def record_forward_predictions(

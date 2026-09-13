@@ -126,8 +126,11 @@ def walk_forward_folds(
         if cursor >= len(dates):
             raise WalkForwardError(f"OOS 起點 {requested.date()} 晚於所有決策日")
 
+        # 凍結點前最後 gap 期的標籤要用到 OOS 價格才能揭曉，因此不只
+        # 第一個 fold 要剔除；後續所有 fold 都必須永久維持同一截止點。
+        frozen_label_cutoff = cursor - gap
         if dev_end is None:
-            training_limit = cursor
+            training_limit = frozen_label_cutoff
         else:
             development_end = pd.Timestamp(dev_end)
             if development_end >= dates[cursor]:
@@ -135,12 +138,12 @@ def walk_forward_folds(
                     f"開發集結束日 {development_end.date()} 必須早於 "
                     f"OOS 起點 {dates[cursor].date()}"
                 )
-            training_limit = bisect_right(dates, development_end)
+            training_limit = min(
+                bisect_right(dates, development_end), frozen_label_cutoff
+            )
 
     while cursor + test_span <= len(dates):
-        train_end = cursor - gap
-        if training_limit is not None:
-            train_end = min(train_end, training_limit)
+        train_end = training_limit if training_limit is not None else cursor - gap
         if train_end > 0:
             yield dates[:train_end], dates[cursor : cursor + test_span]
         cursor += test_span

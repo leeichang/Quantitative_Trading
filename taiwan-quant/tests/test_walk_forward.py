@@ -207,6 +207,7 @@ def test_explicit_oos_start_never_enters_training_set() -> None:
 
     assert folds[0][1][0] == d[180]
     assert all(day < d[180] for train, _ in folds for day in train)
+    assert all(train[-1] == d[167] for train, _ in folds)
 
 
 @pytest.mark.unit

@@ -358,14 +358,15 @@ def load_prices(
     """
     con = _connect(db_path)
     try:
-        requested_end = end or _latest_price_date(con, stock_ids)
-        if requested_end is not None and requested_end >= FROZEN_DATA_START:
-            if not unlock_frozen:
-                raise DataNotAvailableError(
-                    f"{FROZEN_DATA_START} 起是凍結區間；解鎖請傳 "
-                    "unlock_frozen=True 並記錄理由"
-                )
-            _log_frozen_access(db_path, requested_end, frozen_reason)
+        _guard_frozen_access(
+            con,
+            stock_ids,
+            end,
+            db_path,
+            unlock_frozen,
+            frozen_reason,
+            access_kind="prices",
+        )
 
         where: list[str] = []
         params: list[object] = []
@@ -428,7 +429,35 @@ def _latest_price_date(
     return date.fromisoformat(row[0]) if row and row[0] else None
 
 
-def _log_frozen_access(db_path: Path, requested_end: date, reason: str | None) -> None:
+def _guard_frozen_access(
+    con: sqlite3.Connection,
+    stock_ids: list[str] | None,
+    end: date | None,
+    db_path: Path,
+    unlock_frozen: bool,
+    frozen_reason: str | None,
+    access_kind: str,
+) -> None:
+    """價格與籌碼共用的凍結守門，避免從任一入口偷看未來。"""
+    requested_end = end or _latest_price_date(con, stock_ids)
+    if requested_end is None or requested_end < FROZEN_DATA_START:
+        return
+    if not unlock_frozen:
+        raise DataNotAvailableError(
+            f"{FROZEN_DATA_START} 起是凍結區間；解鎖請傳 "
+            "unlock_frozen=True 並記錄理由"
+        )
+    if frozen_reason is None or not frozen_reason.strip():
+        raise DataNotAvailableError("解鎖凍結區間必須記錄理由，不可留白")
+    _log_frozen_access(db_path, requested_end, frozen_reason, access_kind)
+
+
+def _log_frozen_access(
+    db_path: Path,
+    requested_end: date,
+    reason: str,
+    access_kind: str,
+) -> None:
     """以 JSON Lines 記錄每次凍結資料解鎖，不讓重看 OOS 靜默發生。"""
     caller = "unknown"
     this_file = Path(__file__).resolve()
@@ -440,8 +469,9 @@ def _log_frozen_access(db_path: Path, requested_end: date, reason: str | None) -
     record = {
         "accessed_at": datetime.now(UTC).isoformat(),
         "requested_end": requested_end.isoformat(),
+        "access_kind": access_kind,
         "caller": caller,
-        "reason": reason or "未提供理由",
+        "reason": reason,
     }
     log_path = db_path.parent / "frozen_access.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -556,6 +586,8 @@ def load_chips(
     start: date | None = None,
     end: date | None = None,
     db_path: Path = DEFAULT_DB_PATH,
+    unlock_frozen: bool = False,
+    frozen_reason: str | None = None,
 ) -> pd.DataFrame:
     """
     載入籌碼資料，格式對齊 `features.chips.CHIPS_REQUIRED_COLUMNS`。
@@ -564,6 +596,8 @@ def load_chips(
         stock_ids: 股票代號；None 表示全部
         start / end: 日期範圍（含端點）
         db_path: 上游 SQLite 路徑
+        unlock_frozen: 明確允許讀取凍結日起的資料；每次都會寫稽核 log
+        frozen_reason: 解鎖理由，不可省略或留白
 
     Returns:
         MultiIndex (stock_id, date)，欄位：
@@ -580,6 +614,15 @@ def load_chips(
     """
     con = _connect(db_path)
     try:
+        _guard_frozen_access(
+            con,
+            stock_ids,
+            end,
+            db_path,
+            unlock_frozen,
+            frozen_reason,
+            access_kind="chips",
+        )
         where: list[str] = []
         params: list[object] = []
 

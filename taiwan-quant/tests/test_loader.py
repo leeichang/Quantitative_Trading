@@ -26,6 +26,7 @@ from taiwan_quant.data.loader import (
     DataNotAvailableError,
     _apply_adjustment,
     coverage_report,
+    load_chips,
     load_prices,
     load_universe,
     price_quality_report,
@@ -195,6 +196,19 @@ def test_unlocking_frozen_prices_writes_audit_log(fake_db: Path) -> None:
 
 
 @pytest.mark.unit
+def test_unlocking_frozen_prices_requires_reason(fake_db: Path) -> None:
+    """解鎖理由不可省略或只填空白。"""
+    with pytest.raises(DataNotAvailableError, match="必須記錄理由"):
+        load_prices(
+            ["2330"],
+            end=date(2026, 9, 20),
+            db_path=fake_db,
+            unlock_frozen=True,
+            frozen_reason="  ",
+        )
+
+
+@pytest.mark.unit
 def test_pre_freeze_price_load_is_unchanged_and_unlogged(fake_db: Path) -> None:
     """既有資料範圍完全不受守門影響。"""
     result = load_prices(["2330"], end=date(2026, 9, 11), db_path=fake_db)
@@ -220,6 +234,28 @@ def test_omitting_end_cannot_bypass_freeze(fake_db: Path) -> None:
 
     with pytest.raises(DataNotAvailableError, match="凍結區間"):
         load_prices(["2330"], db_path=fake_db)
+
+
+@pytest.mark.unit
+def test_frozen_chips_require_explicit_unlock(fake_db: Path) -> None:
+    """籌碼載入會 JOIN 價格，也必須受同一凍結守門保護。"""
+    with pytest.raises(DataNotAvailableError, match="凍結區間"):
+        load_chips(["2330"], end=date(2026, 9, 20), db_path=fake_db)
+
+
+@pytest.mark.unit
+def test_chips_without_end_cannot_bypass_freeze(fake_db: Path) -> None:
+    """籌碼 end=None 時，依 stock_daily 實際最大日期判斷。"""
+    con = sqlite3.connect(fake_db)
+    con.execute(
+        "INSERT INTO stock_daily VALUES (?,?,?,?,?,?,?)",
+        ("2330", "2026-09-20", 100.0, 110.0, 90.0, 100.0, 1000),
+    )
+    con.commit()
+    con.close()
+
+    with pytest.raises(DataNotAvailableError, match="凍結區間"):
+        load_chips(["2330"], db_path=fake_db)
 
 
 # ══════════════════════════════════════════════════════════════

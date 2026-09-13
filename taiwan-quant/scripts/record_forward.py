@@ -87,7 +87,14 @@ def generate_predictions(
         unlock_frozen=unlock,
         frozen_reason="record_forward 產生前推預測" if unlock else None,
     )
-    chips = load_chips(stock_ids, start=start, end=as_of, db_path=db_path)
+    chips = load_chips(
+        stock_ids,
+        start=start,
+        end=as_of,
+        db_path=db_path,
+        unlock_frozen=unlock,
+        frozen_reason="record_forward 產生前推預測" if unlock else None,
+    )
     by_stock = build_dataset(stock_ids, prices, chips).by_stock
     tiers = {sid: Tier(universe.tier_of(sid)) for sid in by_stock}
     returns_by_stock = {sid: bars["close"].pct_change() for sid, bars in by_stock.items()}

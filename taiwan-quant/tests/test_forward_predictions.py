@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -60,11 +60,25 @@ def test_record_is_idempotent_for_same_prediction_key(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_rerun_timestamp_does_not_duplicate_official_prediction(tmp_path: Path) -> None:
+    """同一資料、版本、策略與標的只能有一筆官方前推預測。"""
+    db = tmp_path / "forward.db"
+    first = prediction()
+    rerun = ForwardPrediction(
+        **{**first.__dict__, "predicted_at": "2026-09-13T14:05:00+08:00"}
+    )
+
+    assert record_forward_predictions(db, [first]) == 1
+    assert record_forward_predictions(db, [rerun]) == 0
+    assert list_unsettled_predictions(db) == [first]
+
+
+@pytest.mark.unit
 def test_settle_fills_realized_return_once(tmp_path: Path) -> None:
     db = tmp_path / "forward.db"
     item = prediction()
     record_forward_predictions(db, [item])
-    settled_at = datetime(2026, 12, 4, tzinfo=timezone.utc)
+    settled_at = datetime(2026, 12, 4, tzinfo=UTC)
 
     changed = settle_forward_prediction(
         db, item, realized_return=0.15, settled_at=settled_at
@@ -82,4 +96,5 @@ def test_settle_fills_realized_return_once(tmp_path: Path) -> None:
         "SELECT realized_return, settled_at FROM forward_predictions"
     ).fetchone()
     con.close()
-    assert row == pytest.approx((0.15, settled_at.isoformat()))
+    assert row[0] == pytest.approx(0.15)
+    assert row[1] == settled_at.isoformat()

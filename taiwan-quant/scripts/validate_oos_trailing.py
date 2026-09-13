@@ -487,6 +487,16 @@ def main() -> None:
                         help="標的池排名依據。市值版命中真實成分股 94.7%%、"
                              "成交金額版 72.7%%")
     parser.add_argument("--db", default=str(HISTORY_DB_PATH))
+    parser.add_argument(
+        "--unlock-frozen",
+        action="store_true",
+        help="明確允許評估 2026-09-14 起的凍結資料（必須同時提供理由）",
+    )
+    parser.add_argument(
+        "--frozen-reason",
+        default=None,
+        help="解鎖凍結資料的稽核理由",
+    )
     args = parser.parse_args()
 
     dev_end = pd.Timestamp(date.fromisoformat(args.dev_end)) if args.dev_end else None
@@ -497,6 +507,8 @@ def main() -> None:
         parser.error("--dev-end 必須與 --oos-start 一起使用")
     if dev_end is not None and dev_end >= oos_start_override:
         parser.error("--dev-end 必須早於 --oos-start")
+    if args.unlock_frozen and not (args.frozen_reason or "").strip():
+        parser.error("--unlock-frozen 必須同時提供非空白的 --frozen-reason")
 
     db_path = Path(args.db)
 
@@ -548,8 +560,17 @@ def main() -> None:
 
     start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
     prices = load_prices(load_ids, start=start, end=end,
-                         adjusted=True, db_path=db_path)
-    chips = load_chips(all_members, start=start, end=end, db_path=db_path)
+                         adjusted=True, db_path=db_path,
+                         unlock_frozen=args.unlock_frozen,
+                         frozen_reason=args.frozen_reason)
+    chips = load_chips(
+        all_members,
+        start=start,
+        end=end,
+        db_path=db_path,
+        unlock_frozen=args.unlock_frozen,
+        frozen_reason=args.frozen_reason,
+    )
     dataset = build_dataset(load_ids, prices, chips)
     print(dataset.describe())
     print()
