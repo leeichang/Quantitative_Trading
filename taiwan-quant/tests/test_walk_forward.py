@@ -188,3 +188,57 @@ def test_embargo_reduces_training_samples_measurably() -> None:
 
     assert first_loss == pytest.approx(0.080, abs=0.001)
     assert last_loss == pytest.approx(0.024, abs=0.002)
+
+
+@pytest.mark.unit
+def test_explicit_oos_start_never_enters_training_set() -> None:
+    """凍結切分後，OOS 決策不得在後續 fold 被吸回訓練集。"""
+    d = dates(240)
+    requested = d[180] - pd.Timedelta(days=1)
+    folds = list(walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=requested,
+        dev_end=d[179],
+    ))
+
+    assert folds[0][1][0] == d[180]
+    assert all(day < d[180] for train, _ in folds for day in train)
+
+
+@pytest.mark.unit
+def test_omitting_oos_start_preserves_existing_folds() -> None:
+    """未指定凍結日期時，舊有推導切分必須逐筆不變。"""
+    d = dates(200)
+    legacy = list(walk_forward_folds(
+        d, first_train=150, test_span=12, horizon=60, stride=5
+    ))
+    explicit_none = list(walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=None,
+        dev_end=None,
+    ))
+
+    assert explicit_none == legacy
+
+
+@pytest.mark.unit
+def test_oos_start_before_minimum_training_raises() -> None:
+    """OOS 太早會讓首次訓練不足，必須明確拒絕。"""
+    d = dates(200)
+    with pytest.raises(WalkForwardError, match="早於最低訓練"):
+        list(walk_forward_folds(
+            d,
+            first_train=150,
+            test_span=12,
+            horizon=60,
+            stride=5,
+            oos_start=d[100],
+        ))

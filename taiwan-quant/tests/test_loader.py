@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 
 from taiwan_quant.data.loader import (
+    FROZEN_DATA_START,
     _apply_adjustment,
     DEFAULT_DB_PATH,
     DataNotAvailableError,
@@ -167,6 +168,39 @@ def test_missing_db_raises_with_actionable_message(tmp_path: Path) -> None:
     """找不到 DB 時錯誤訊息要告訴使用者怎麼辦，不是只丟路徑"""
     with pytest.raises(DataNotAvailableError, match="QUICKSTART"):
         load_universe(db_path=tmp_path / "nope.db")
+
+
+@pytest.mark.unit
+def test_frozen_prices_require_explicit_unlock(fake_db: Path) -> None:
+    """凍結起點以後的資料不可靜默載入。"""
+    assert FROZEN_DATA_START == date(2026, 9, 14)
+    with pytest.raises(DataNotAvailableError, match="凍結區間"):
+        load_prices(["2330"], end=date(2026, 9, 20), db_path=fake_db)
+
+
+@pytest.mark.unit
+def test_unlocking_frozen_prices_writes_audit_log(fake_db: Path) -> None:
+    """明確解鎖可讀取，且必須留下時間、呼叫端與理由。"""
+    load_prices(
+        ["2330"],
+        end=date(2026, 9, 20),
+        db_path=fake_db,
+        unlock_frozen=True,
+        frozen_reason="結算前推預測",
+    )
+
+    log = (fake_db.parent / "frozen_access.log").read_text(encoding="utf-8")
+    assert "test_unlocking_frozen_prices_writes_audit_log" in log
+    assert "結算前推預測" in log
+
+
+@pytest.mark.unit
+def test_pre_freeze_price_load_is_unchanged_and_unlogged(fake_db: Path) -> None:
+    """既有資料範圍完全不受守門影響。"""
+    result = load_prices(["2330"], end=date(2026, 9, 11), db_path=fake_db)
+
+    assert len(result) == 2
+    assert not (fake_db.parent / "frozen_access.log").exists()
 
 
 # ══════════════════════════════════════════════════════════════
