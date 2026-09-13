@@ -37,6 +37,7 @@ CLAUDE.md 禁令 1：T 日決策只能用 T 日收盤前可得的資料。
 from __future__ import annotations
 
 import math
+from bisect import bisect_left, bisect_right
 from collections.abc import Iterator
 
 import pandas as pd
@@ -76,6 +77,8 @@ def walk_forward_folds(
     test_span: int,
     horizon: int,
     stride: int,
+    oos_start: pd.Timestamp | None = None,
+    dev_end: pd.Timestamp | None = None,
 ) -> Iterator[tuple[list[pd.Timestamp], list[pd.Timestamp]]]:
     """
     產生滾動擴張窗口的 (訓練日, 測試日)，**訓練集已做標籤隔離**。
@@ -86,6 +89,9 @@ def walk_forward_folds(
         test_span: 每個 fold 的測試期數
         horizon: 持有交易日數
         stride: 決策間隔交易日數
+        oos_start: 指定時，以最接近且不早於此日的決策日開始測試
+        dev_end: 開發集最後日期；指定 OOS 時，後續 fold 不會把它之後的
+            決策吸回訓練集
 
     Yields:
         (訓練日清單, 測試日清單)
@@ -100,14 +106,41 @@ def walk_forward_folds(
         raise WalkForwardError(
             f"first_train 與 test_span 都必須為正，得到 {first_train}, {test_span}"
         )
-    if any(b < a for a, b in zip(dates, dates[1:])):
+    if any(b < a for a, b in zip(dates, dates[1:], strict=False)):
         raise WalkForwardError("決策日必須依日期升冪排序")
+    if dev_end is not None and oos_start is None:
+        raise WalkForwardError("--dev-end 只能與 --oos-start 一起使用")
 
     gap = embargo_periods(horizon, stride)
-    cursor = first_train
+    training_limit: int | None = None
+    if oos_start is None:
+        cursor = first_train
+    else:
+        requested = pd.Timestamp(oos_start)
+        cursor = bisect_left(dates, requested)
+        if cursor < first_train:
+            raise WalkForwardError(
+                f"OOS 起點 {requested.date()} 早於最低訓練需求 "
+                f"{first_train} 個決策期"
+            )
+        if cursor >= len(dates):
+            raise WalkForwardError(f"OOS 起點 {requested.date()} 晚於所有決策日")
+
+        if dev_end is None:
+            training_limit = cursor
+        else:
+            development_end = pd.Timestamp(dev_end)
+            if development_end >= dates[cursor]:
+                raise WalkForwardError(
+                    f"開發集結束日 {development_end.date()} 必須早於 "
+                    f"OOS 起點 {dates[cursor].date()}"
+                )
+            training_limit = bisect_right(dates, development_end)
 
     while cursor + test_span <= len(dates):
         train_end = cursor - gap
+        if training_limit is not None:
+            train_end = min(train_end, training_limit)
         if train_end > 0:
             yield dates[:train_end], dates[cursor : cursor + test_span]
         cursor += test_span

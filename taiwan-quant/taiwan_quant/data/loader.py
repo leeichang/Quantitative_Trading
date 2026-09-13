@@ -23,9 +23,11 @@
 
 from __future__ import annotations
 
+import inspect
+import json
 import sqlite3
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +36,14 @@ import pandas as pd
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "qlib-tw-trader" / "data" / "data.db"
 
 PRICE_COLUMNS = ("open", "high", "low", "close", "volume")
+
+FROZEN_DATA_START = date(2026, 9, 14)
+"""
+凍結資料起點（含）。
+
+載入此日之後的價格必須明確解鎖並留下理由。現有資料只到 2026-09-11，
+所以不影響既有驗證；守門只約束未來新增、真正未被看過的資料。
+"""
 
 
 class DataNotAvailableError(RuntimeError):
@@ -316,6 +326,8 @@ def load_prices(
     db_path: Path = DEFAULT_DB_PATH,
     adjusted: bool = True,
     drop_incomplete: bool = True,
+    unlock_frozen: bool = False,
+    frozen_reason: str | None = None,
 ) -> pd.DataFrame:
     """
     載入日 K。
@@ -326,6 +338,8 @@ def load_prices(
         db_path: 上游 SQLite 路徑
         adjusted: True 則用還原收盤價覆寫 close（CLAUDE.md 禁令 12）
         drop_incomplete: True 則剔除 OHLC 有缺漏或非正值的列
+        unlock_frozen: 明確允許讀取凍結日起的資料；每次都會寫稽核 log
+        frozen_reason: 解鎖理由，會與時間戳及呼叫端一起寫入 log
 
     關於 drop_incomplete：
         上游資料有洞（停牌、缺漏）。實測案例：2317 在 2025-07-30 有一列
@@ -344,6 +358,15 @@ def load_prices(
     """
     con = _connect(db_path)
     try:
+        requested_end = end or _latest_price_date(con, stock_ids)
+        if requested_end is not None and requested_end >= FROZEN_DATA_START:
+            if not unlock_frozen:
+                raise DataNotAvailableError(
+                    f"{FROZEN_DATA_START} 起是凍結區間；解鎖請傳 "
+                    "unlock_frozen=True 並記錄理由"
+                )
+            _log_frozen_access(db_path, requested_end, frozen_reason)
+
         where: list[str] = []
         params: list[object] = []
 
@@ -388,6 +411,42 @@ def load_prices(
             raise DataNotAvailableError("剔除缺漏列後無資料可用")
 
     return df.set_index(["stock_id", "date"]).sort_index()
+
+
+def _latest_price_date(
+    con: sqlite3.Connection, stock_ids: list[str] | None
+) -> date | None:
+    """取得本次標的範圍的資料截止日，防止 end=None 繞過凍結。"""
+    if stock_ids:
+        placeholders = ",".join("?" * len(stock_ids))
+        row = con.execute(
+            f"SELECT MAX(date) FROM stock_daily WHERE stock_id IN ({placeholders})",
+            stock_ids,
+        ).fetchone()
+    else:
+        row = con.execute("SELECT MAX(date) FROM stock_daily").fetchone()
+    return date.fromisoformat(row[0]) if row and row[0] else None
+
+
+def _log_frozen_access(db_path: Path, requested_end: date, reason: str | None) -> None:
+    """以 JSON Lines 記錄每次凍結資料解鎖，不讓重看 OOS 靜默發生。"""
+    caller = "unknown"
+    this_file = Path(__file__).resolve()
+    for frame in inspect.stack()[1:]:
+        if Path(frame.filename).resolve() != this_file:
+            caller = f"{frame.filename}:{frame.function}:{frame.lineno}"
+            break
+
+    record = {
+        "accessed_at": datetime.now(UTC).isoformat(),
+        "requested_end": requested_end.isoformat(),
+        "caller": caller,
+        "reason": reason or "未提供理由",
+    }
+    log_path = db_path.parent / "frozen_access.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def _is_complete(df: pd.DataFrame) -> pd.Series:

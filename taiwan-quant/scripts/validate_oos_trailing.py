@@ -69,7 +69,7 @@ from taiwan_quant.data.loader import (  # noqa: E402
 from taiwan_quant.labeling.trail_width import derive_trail_width  # noqa: E402
 from taiwan_quant.labeling.trailing_stop import label_trailing  # noqa: E402
 from taiwan_quant.ranking.trailing_portfolio import DEFAULT_EDGE_Z  # noqa: E402
-from taiwan_quant.strategies.families import STRATEGY_FAMILIES, StrategyFamily  # noqa: E402
+from taiwan_quant.strategies.families import STRATEGY_FAMILIES  # noqa: E402
 from taiwan_quant.validation.benchmarks import (  # noqa: E402
     ETF_BENCHMARKS,
     effective_samples,
@@ -82,10 +82,7 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_return_calibrator,
 )
 from taiwan_quant.validation.stats import deflated_sharpe_ratio  # noqa: E402
-from taiwan_quant.validation.walk_forward import (  # noqa: E402
-    embargo_periods,
-    walk_forward_folds,
-)
+from taiwan_quant.validation.walk_forward import walk_forward_folds  # noqa: E402
 
 PULLBACK_QUANTILE = 0.80
 """移動停損取歷史最大回落的第幾分位。見 labeling/trail_width.py"""
@@ -302,29 +299,14 @@ def resolve_members(
     return members
 
 
-def to_plans(
-    picks: list[tuple[pd.Timestamp, Decision]],
-    tiers: dict[str, Tier],
-) -> list[TradePlan]:
-    """把選中的決策轉成回測用的交易計畫"""
-    return [
-        TradePlan(
-            week_id=decision_date.strftime("%Y-%m-%d"),
-            stock_id=d.stock_id,
-            gross_return=d.gross_return,
-            holding_days=d.holding_days,
-            tier=tiers.get(d.stock_id, Tier.MID),
-        )
-        for decision_date, d in picks
-    ]
-
-
 def run_walk_forward(
     by_date: dict[pd.Timestamp, list[Decision]],
     tiers: dict[str, Tier],
     rng: np.random.Generator,
     edge_z: float,
     horizon: int,
+    oos_start_override: pd.Timestamp | None = None,
+    dev_end: pd.Timestamp | None = None,
 ) -> tuple[
     list[tuple[pd.Timestamp, Decision, float]],
     list[tuple[pd.Timestamp, Decision, float]],
@@ -364,7 +346,15 @@ def run_walk_forward(
     random_signals: list[tuple[pd.Timestamp, Decision, float]] = []
     folds = 0
     calibration_failures = 0
-    oos_start = dates[first_train]
+    if oos_start_override is None:
+        oos_start = dates[first_train]
+    else:
+        oos_start = next(
+            (day for day in dates if day >= oos_start_override),
+            None,
+        )
+        if oos_start is None:
+            raise ValueError(f"OOS 起點 {oos_start_override.date()} 晚於所有決策日")
 
     # **標籤隔離（embargo）。** 訓練集尾端的決策，其標籤要等 horizon
     # 天後才揭曉——那些天落在測試段內，等於讓校準器看過測試期的走勢。
@@ -376,6 +366,8 @@ def run_walk_forward(
         test_span=test_span,
         horizon=horizon,
         stride=DECISION_STRIDE,
+        oos_start=oos_start_override,
+        dev_end=dev_end,
     ):
         folds += 1
 
@@ -477,6 +469,16 @@ def main() -> None:
     parser.add_argument("--horizons", type=int, nargs="*", default=[20, 40, 60])
     parser.add_argument("--start", default="2015-01-01")
     parser.add_argument("--end", default="2026-09-11")
+    parser.add_argument(
+        "--dev-end",
+        default=None,
+        help="開發集結束日（ISO）。之後的資料只在 --oos-start 指定時使用",
+    )
+    parser.add_argument(
+        "--oos-start",
+        default=None,
+        help="OOS 起始日（ISO）。指定時覆蓋由 FIRST_TRAIN_DAYS 推導的起點",
+    )
     parser.add_argument("--edge-z", type=float, default=DEFAULT_EDGE_Z)
     parser.add_argument("--slots", type=int, default=TOP_N)
     parser.add_argument("--universe-size", type=int, default=UNIVERSE_SIZE)
@@ -486,6 +488,15 @@ def main() -> None:
                              "成交金額版 72.7%%")
     parser.add_argument("--db", default=str(HISTORY_DB_PATH))
     args = parser.parse_args()
+
+    dev_end = pd.Timestamp(date.fromisoformat(args.dev_end)) if args.dev_end else None
+    oos_start_override = (
+        pd.Timestamp(date.fromisoformat(args.oos_start)) if args.oos_start else None
+    )
+    if dev_end is not None and oos_start_override is None:
+        parser.error("--dev-end 必須與 --oos-start 一起使用")
+    if dev_end is not None and dev_end >= oos_start_override:
+        parser.error("--dev-end 必須早於 --oos-start")
 
     db_path = Path(args.db)
 
@@ -497,6 +508,8 @@ def main() -> None:
           f"每個 fold 測試 {TEST_WINDOW_DAYS} 日")
     print(f"移動停損分位 {PULLBACK_QUANTILE:.0%}｜優勢門檻 {args.edge_z:.1f} 個標準誤"
           f"｜組合槽位 {args.slots}｜標的池 {args.universe_size} 檔/季")
+    if oos_start_override is not None and oos_start_override < pd.Timestamp("2026-09-14"):
+        print("⚠️  此評估區間先前已被看過 7 次，不是全新 OOS；只能用來否定，不能證明。")
     print()
 
     # ── 標的池歷來成員（含已下市）──
@@ -578,7 +591,14 @@ def main() -> None:
             rng = np.random.default_rng(RANDOM_SEED)
 
             strat_sig, rand_sig, oos_start, folds, failures = run_walk_forward(
-                by_date, tiers, rng, args.edge_z, horizon)
+                by_date,
+                tiers,
+                rng,
+                args.edge_z,
+                horizon,
+                oos_start_override=oos_start_override,
+                dev_end=dev_end,
+            )
 
             if not strat_sig or oos_start is None:
                 rows.append({"family": family.name, "horizon": horizon,

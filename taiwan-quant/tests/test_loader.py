@@ -21,10 +21,10 @@ import pandas as pd
 import pytest
 
 from taiwan_quant.data.loader import (
-    FROZEN_DATA_START,
-    _apply_adjustment,
     DEFAULT_DB_PATH,
+    FROZEN_DATA_START,
     DataNotAvailableError,
+    _apply_adjustment,
     coverage_report,
     load_prices,
     load_universe,
@@ -173,7 +173,7 @@ def test_missing_db_raises_with_actionable_message(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_frozen_prices_require_explicit_unlock(fake_db: Path) -> None:
     """凍結起點以後的資料不可靜默載入。"""
-    assert FROZEN_DATA_START == date(2026, 9, 14)
+    assert date(2026, 9, 14) == FROZEN_DATA_START
     with pytest.raises(DataNotAvailableError, match="凍結區間"):
         load_prices(["2330"], end=date(2026, 9, 20), db_path=fake_db)
 
@@ -201,6 +201,25 @@ def test_pre_freeze_price_load_is_unchanged_and_unlogged(fake_db: Path) -> None:
 
     assert len(result) == 2
     assert not (fake_db.parent / "frozen_access.log").exists()
+
+
+@pytest.mark.unit
+def test_omitting_end_cannot_bypass_freeze(fake_db: Path) -> None:
+    """end=None 代表載入全部，也必須檢查資料庫實際截止日。"""
+    con = sqlite3.connect(fake_db)
+    con.execute(
+        "INSERT INTO stock_daily VALUES (?,?,?,?,?,?,?)",
+        ("2330", "2026-09-20", 100.0, 110.0, 90.0, 100.0, 1000),
+    )
+    con.execute(
+        "INSERT INTO stock_daily_adj VALUES (?,?,?)",
+        ("2330", "2026-09-20", 100.0),
+    )
+    con.commit()
+    con.close()
+
+    with pytest.raises(DataNotAvailableError, match="凍結區間"):
+        load_prices(["2330"], db_path=fake_db)
 
 
 # ══════════════════════════════════════════════════════════════
