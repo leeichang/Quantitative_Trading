@@ -62,7 +62,7 @@ def test_relative_top_rejects_invalid_percent(value: float) -> None:
 
 @pytest.mark.unit
 def test_periodic_rebalance_uses_exact_calendar_intervals_and_top_three() -> None:
-    """每 4 個交易日重選，只用節點當日分數最高的 3 檔。"""
+    """每 4 個交易日重選，並在下個節點強制出場、重算區間報酬。"""
     calendar = list(pd.date_range("2023-01-02", periods=9, freq="B"))
     signals = [
         _signal(day, sid, score)
@@ -70,20 +70,33 @@ def test_periodic_rebalance_uses_exact_calendar_intervals_and_top_three() -> Non
         for sid, score in (("A", 1.0), ("B", 4.0), ("C", 3.0), ("D", 2.0))
     ]
 
+    prices = {sid: 100.0 for sid in ("A", "B", "C", "D")}
+
+    def lookup(stock_id: str, day: pd.Timestamp) -> float | None:
+        multiplier = 1.0 + calendar.index(day) / 100.0
+        return prices[stock_id] * multiplier
+
     selected = select_periodic_rebalances(
-        signals, calendar, rebalance_every=4, top_n=3
+        signals, calendar, lookup, rebalance_every=4, top_n=3
     )
 
     assert sorted({s.decision_date for s in selected}) == [
-        calendar[0], calendar[4], calendar[8]
+        calendar[0], calendar[4]
     ]
     assert [s.stock_id for s in selected[:3]] == ["B", "C", "D"]
-    assert len(selected) == 9
+    assert len(selected) == 6
+    assert all(s.exit_date == calendar[4] for s in selected[:3])
+    assert all(s.exit_date == calendar[8] for s in selected[3:])
+    assert selected[0].gross_return == pytest.approx(0.04)
 
 
 @pytest.mark.unit
 def test_periodic_rebalance_rejects_non_positive_inputs() -> None:
     with pytest.raises(ValueError, match="rebalance_every"):
-        select_periodic_rebalances([], [pd.Timestamp("2023-01-02")], 0, 3)
+        select_periodic_rebalances(
+            [], [pd.Timestamp("2023-01-02")], lambda _s, _d: 1.0, 0, 3
+        )
     with pytest.raises(ValueError, match="top_n"):
-        select_periodic_rebalances([], [pd.Timestamp("2023-01-02")], 60, 0)
+        select_periodic_rebalances(
+            [], [pd.Timestamp("2023-01-02")], lambda _s, _d: 1.0, 60, 0
+        )
