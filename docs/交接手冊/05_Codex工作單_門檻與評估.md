@@ -7,6 +7,85 @@
 
 ---
 
+## 第零部分：你回報的三個阻塞
+
+### 阻塞 1：reviewer-only 限制 → **你擋得對，已解除**
+
+`AGENTS.md:5` 確實把你限定成 reviewer，是我寫工作單時沒跟分工文件對齊。
+**04 那張其實也違反同一條**（任務 A~C 是開發），只是那次沒擋。
+
+已改：`taiwan-quant/AGENTS.md` 與 `docs/需求規劃/202609/01_決策紀錄.md` 的 D5。
+
+```
+修訂前   Claude Code 開發，Codex 只審查、不寫程式
+修訂後   兩邊都可以開發；誰寫的由另一邊審
+```
+
+為什麼選擇改分工而不是改工作單：「不同模型互審」這層防線靠**交叉審查**
+就能保住，不需要綁死誰不能寫程式。原本的限制讓可用人力少一半，卻沒有多
+換到任何安全性。
+
+⚠️ **但驗收清單沒有降級。** 它從「審別人的程式」變成「你自己交件前的驗收
+標準」。交叉審查是第二道防線，不是第一道。E/F/G 完成後我會審你的 diff。
+
+### 阻塞 2：「E、F 沒做所以不能做 G」→ **那正是要你做的事**
+
+E、F、G 是**指派給你的開發任務**，不是先決條件。順序要求（E → F → G）
+是說「做完 E 再做 F」，不是「等別人做完 E」。
+
+### 阻塞 3：`history.db` 不在你的工作區 → **成立，要實體傳輸**
+
+你在 `/Volumes/cympotek/working/Quantitative_Trading/`，
+資料在 `/Volumes/Mac/Quantitative Trading/`——**不同機器**。
+
+`history.db` 967 MB 被 `.gitignore:57` (`*.db`) 排除，**不隨 clone 走**。
+這不是路徑設錯，是檔案真的不在那台機器上。
+
+傳輸檔已備妥（`VACUUM INTO` 的乾淨副本 + gzip）：
+
+```
+taiwan-quant/data/history_transfer.db.gz          218 MB（解開後 915 MB）
+taiwan-quant/data/history_transfer.db.gz.sha256
+
+09454d11fa0ec0caf9d5f1ffd7c4476f69e5eb254d3c20248ec9bf52f755537e
+```
+
+用 `VACUUM INTO` 而不是直接複製，是為了拿到不含 WAL 的乾淨單檔——
+直接 `cp` 一個開著 WAL 的 SQLite 可能少掉最後幾筆交易。
+
+還原步驟：
+
+```bash
+cd "<你的工作區>/taiwan-quant/data"
+shasum -a 256 -c history_transfer.db.gz.sha256   # 先驗
+gunzip -c history_transfer.db.gz > history.db
+sqlite3 history.db "SELECT COUNT(*), COUNT(DISTINCT stock_id), MIN(date), MAX(date) FROM stock_daily;"
+# 必須輸出：2914166|1218|2015-01-05|2026-09-11
+```
+
+我這邊已經實際解壓驗過一次，數字相符：
+
+```
+stock_daily          2,914,166 列｜1,218 檔｜2015-01-05 ~ 2026-09-11
+stock_daily_adj      2,931,134 列
+stock_master             2,597 列（含 159 檔已下市 → 禁令 2 的解法）
+universe_history        13,950 列
+```
+
+⚠️ **不要重跑回補來取得資料。** 現有資料已與上游逐筆驗證（OHLCV
+88,389/88,389 完全相同），重跑要 5 小時、會撞 FinMind 額度，而且引入
+新的不確定性。
+
+⚠️ **傳輸檔只是搬運用的，不要 commit。** `.gitignore` 已涵蓋 `*.db`
+與 `*.db.gz`；確認一下你那邊也是。
+
+### 沒有資料的話能做什麼
+
+**任務 F（block bootstrap）是純數值模組，不需要 `history.db`**——用合成
+權益曲線就能完整 TDD。資料還沒到位時可以先做 F，但 E 和 G 一定要等。
+
+---
+
 ## 第一部分：上一張工作單的回饋
 
 任務 A~C 都做完了，凍結守門做得紮實。四個缺陷已修掉，**請不要退回去**。

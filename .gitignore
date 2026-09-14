@@ -60,6 +60,10 @@ htmlcov/
 *.sqlite3
 *.db.bak*
 *.db.backup*
+# 跨機器搬運用的壓縮副本（~280MB）。`*.db` 不會匹配到 .gz 結尾
+*.db.gz
+*.db.zst
+*.db.gz.sha256
 
 # ---------- 訓練模型 / Qlib 匯出（可重訓 / 重匯出）----------
 data/models/
