@@ -11,6 +11,7 @@ from taiwan_quant.validation.thresholds import (
     filter_relative_top,
     select_periodic_rebalances,
 )
+from scripts.validate_oos_trailing import make_price_lookup
 
 
 def _signal(day: pd.Timestamp, stock_id: str, score: float) -> Signal:
@@ -109,6 +110,19 @@ def test_periodic_rebalance_audits_top_candidate_with_missing_price() -> None:
     assert result.candidates == 2
     assert result.rejected_missing_price == 1
     assert [signal.stock_id for signal in result.signals] == ["B"]
+
+
+@pytest.mark.unit
+def test_execution_price_does_not_fill_forward_across_suspension() -> None:
+    """成交價必須精確命中 T+1；只有逐日市值可沿用舊收盤價。"""
+    first, suspended = pd.Timestamp("2023-01-02"), pd.Timestamp("2023-01-03")
+    bars = pd.DataFrame({"open": [100.0], "close": [101.0]}, index=[first])
+
+    execution = make_price_lookup({"A": bars}, column="open", exact=True)
+    mark_to_market = make_price_lookup({"A": bars}, column="close")
+
+    assert execution("A", suspended) is None
+    assert mark_to_market("A", suspended) == pytest.approx(101.0)
 
 
 @pytest.mark.unit
