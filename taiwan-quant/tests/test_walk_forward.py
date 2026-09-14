@@ -229,6 +229,80 @@ def test_freeze_model_keeps_training_at_initial_oos_cutoff() -> None:
 
 
 @pytest.mark.unit
+def test_oos_start_alone_expands_across_many_folds() -> None:
+    """
+    不給 `dev_end` 時，訓練集要一路擴張，不是只擴張前幾個 fold。
+
+    手算：cursor 從 180 起、每次 +12，隔離 12 期。
+    訓練期數 = 180-12, 192-12, 204-12, ... = 168, 180, 192, ...
+    """
+    d = dates(320)
+    sizes = [len(train) for train, _ in walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=d[180],
+    )]
+
+    assert sizes[:3] == [168, 180, 192]
+    assert sizes == sorted(sizes)
+    assert len(sizes) > 5
+    assert sizes[-1] > sizes[0]
+
+
+@pytest.mark.unit
+def test_expanding_after_oos_start_still_embargoes_every_fold() -> None:
+    """
+    擴張不得吃掉隔離。每個 fold 的訓練尾端與測試段起點之間，
+    都要**正好**隔 12 期。
+
+    這是 `0f53df5` 之前的真實漏洞：`min(cursor - gap, cursor_初始)`
+    在 fold 2 以後會選中 `cursor_初始`，等於完全沒套隔離。
+    """
+    d = dates(320)
+    position = {day: i for i, day in enumerate(d)}
+    folds = list(walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=d[180],
+    ))
+
+    assert len(folds) > 1
+    for train, test in folds:
+        excluded = position[test[0]] - position[train[-1]] - 1
+        assert excluded == 12, f"測試段 {test[0].date()} 前只隔離了 {excluded} 期"
+
+
+@pytest.mark.unit
+def test_early_dev_end_keeps_a_constant_lag_not_a_fixed_wall() -> None:
+    """
+    `dev_end` 明顯早於 OOS 起點時，那段距離會**隨 fold 一起往前移**，
+    不是釘死在某一天。
+
+    手算：`dev_end = d[155]` → 初始訓練截止 156（比隔離要求的 168 更嚴）。
+    之後每個 fold 都保持這個落後量：156, 168, 180, ...
+    緊貼 `oos_start` 的 `dev_end` 不會觸發這條路徑，所以要單獨守。
+    """
+    d = dates(320)
+    sizes = [len(train) for train, _ in walk_forward_folds(
+        d,
+        first_train=150,
+        test_span=12,
+        horizon=60,
+        stride=5,
+        oos_start=d[180],
+        dev_end=d[155],
+    )]
+
+    assert sizes[:3] == [156, 168, 180]
+
+
+@pytest.mark.unit
 def test_omitting_oos_start_preserves_existing_folds() -> None:
     """未指定凍結日期時，舊有推導切分必須逐筆不變。"""
     d = dates(200)
