@@ -26,7 +26,7 @@ class PeriodicSelectionResult:
 def filter_relative_top(
     signals: list[Signal],
     top_percent: float,
-) -> PeriodicSelectionResult:
+) -> list[Signal]:
     """每個決策日只保留排名分數前 ``top_percent`` 的訊號。"""
     if not 0 < top_percent <= 100:
         raise ValueError(f"top_percent 必須落在 (0, 100]，得到 {top_percent}")
@@ -49,7 +49,7 @@ def select_periodic_rebalances(
     price_lookup: PriceLookup,
     rebalance_every: int,
     top_n: int,
-) -> list[Signal]:
+) -> PeriodicSelectionResult:
     """固定節點選 Top N，並在下個節點強制出場、依節點價格重算報酬。"""
     if rebalance_every < 1:
         raise ValueError(f"rebalance_every 必須為正，得到 {rebalance_every}")

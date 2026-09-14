@@ -451,9 +451,9 @@ def to_signals(
 
 
 def make_price_lookup(
-    by_stock: dict[str, pd.DataFrame], column: str = "close"
+    by_stock: dict[str, pd.DataFrame], column: str = "close", exact: bool = False
 ) -> PriceLookup:
-    """建立價格查詢；市值預設用收盤價，E3 成交則明確傳入開盤價。"""
+    """建立價格查詢；成交價 exact=True 禁止用停牌前的舊價假設成交。"""
     tables = {
         sid: bars[column].astype(float) for sid, bars in by_stock.items()
         if column in bars
@@ -463,6 +463,11 @@ def make_price_lookup(
         series = tables.get(stock_id)
         if series is None:
             return None
+        if exact:
+            if day not in series.index:
+                return None
+            value = float(series.loc[day])
+            return value if np.isfinite(value) and value > 0 else None
         window = series.loc[series.index <= day]
         if window.empty:
             return None
@@ -631,7 +636,7 @@ def main() -> None:
     calendar = trading_calendar(by_stock)
     decision_dates = calendar[WARMUP_DAYS::DECISION_STRIDE]
     price_lookup = make_price_lookup(by_stock)
-    execution_lookup = make_price_lookup(by_stock, column="open")
+    execution_lookup = make_price_lookup(by_stock, column="open", exact=True)
 
     print(f"交易日曆 {len(calendar)} 天｜決策日 {len(decision_dates)} 個", flush=True)
 

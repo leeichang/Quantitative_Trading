@@ -5,13 +5,13 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.validate_oos_trailing import make_price_lookup
 from taiwan_quant.backtest.portfolio_sim import Signal
 from taiwan_quant.config.costs import Tier
 from taiwan_quant.validation.thresholds import (
     filter_relative_top,
     select_periodic_rebalances,
 )
-from scripts.validate_oos_trailing import make_price_lookup
 
 
 def _signal(day: pd.Timestamp, stock_id: str, score: float) -> Signal:
