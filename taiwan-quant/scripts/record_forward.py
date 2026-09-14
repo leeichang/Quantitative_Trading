@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
+from bisect import bisect_right
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -27,6 +28,10 @@ from weekly_plan_trailing import (  # noqa: E402
 )
 
 from taiwan_quant.config.costs import Tier  # noqa: E402
+from taiwan_quant.data.calendar import (  # noqa: E402
+    due_trading_date,
+    load_trading_calendar,
+)
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     FROZEN_DATA_START,
@@ -108,9 +113,16 @@ def generate_predictions(
     atr_percentiles = (
         pd.Series(atr_ratios).rank(pct=True).to_dict() if atr_ratios else {}
     )
-    train_end = pd.Timestamp(as_of) - pd.Timedelta(days=horizon * 2)
+    calendar = load_trading_calendar(db_path)
+    # 隔離：訓練標籤必須在 as_of 當天就已揭曉，所以訓練截止日往前推整整
+    # horizon 個**交易日**。原本用 `as_of - horizon * 2 天` 這種日曆日
+    # 近似，會隨農曆年漂移，而且跟 walk_forward 的隔離定義對不上。
+    as_of_index = bisect_right(calendar, as_of) - 1
+    if as_of_index < horizon:
+        raise ValueError(f"{as_of} 之前不足 {horizon} 個交易日，無法隔離訓練標籤")
+    train_end = pd.Timestamp(calendar[as_of_index - horizon])
     predicted_at = datetime.now().astimezone().isoformat()
-    due_date = (pd.Timestamp(as_of) + pd.offsets.BDay(horizon)).date().isoformat()
+    due_date = due_trading_date(calendar, as_of, horizon).isoformat()
     output: list[ForwardPrediction] = []
 
     families = [family for family in STRATEGY_FAMILIES if family.name in family_names]
@@ -177,6 +189,7 @@ def generate_predictions(
                 predicted_at=predicted_at,
                 data_asof=as_of.isoformat(),
                 strategy_version=STRATEGY_VERSION,
+                edge_z=edge_z,
                 family=family.name,
                 horizon=horizon,
                 stock_id=candidate.stock_id,
