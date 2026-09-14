@@ -63,7 +63,7 @@ def test_relative_top_rejects_invalid_percent(value: float) -> None:
 @pytest.mark.unit
 def test_periodic_rebalance_uses_exact_calendar_intervals_and_top_three() -> None:
     """每 4 個交易日重選，並在下個節點強制出場、重算區間報酬。"""
-    calendar = list(pd.date_range("2023-01-02", periods=9, freq="B"))
+    calendar = list(pd.date_range("2023-01-02", periods=10, freq="B"))
     signals = [
         _signal(day, sid, score)
         for day in calendar
@@ -76,18 +76,39 @@ def test_periodic_rebalance_uses_exact_calendar_intervals_and_top_three() -> Non
         multiplier = 1.0 + calendar.index(day) / 100.0
         return prices[stock_id] * multiplier
 
-    selected = select_periodic_rebalances(
+    result = select_periodic_rebalances(
         signals, calendar, lookup, rebalance_every=4, top_n=3
     )
+    selected = list(result.signals)
 
     assert sorted({s.decision_date for s in selected}) == [
-        calendar[0], calendar[4]
+        calendar[1], calendar[5]
     ]
     assert [s.stock_id for s in selected[:3]] == ["B", "C", "D"]
     assert len(selected) == 6
-    assert all(s.exit_date == calendar[4] for s in selected[:3])
-    assert all(s.exit_date == calendar[8] for s in selected[3:])
-    assert selected[0].gross_return == pytest.approx(0.04)
+    assert all(s.exit_date == calendar[5] for s in selected[:3])
+    assert all(s.exit_date == calendar[9] for s in selected[3:])
+    assert selected[0].gross_return == pytest.approx(1.05 / 1.01 - 1.0)
+    assert selected[0].entry_price == pytest.approx(101.0)
+    assert result.candidates == 6
+    assert result.rejected_missing_price == 0
+
+
+@pytest.mark.unit
+def test_periodic_rebalance_audits_top_candidate_with_missing_price() -> None:
+    calendar = list(pd.date_range("2023-01-02", periods=4, freq="B"))
+    signals = [_signal(calendar[0], "A", 2.0), _signal(calendar[0], "B", 1.0)]
+
+    def lookup(stock_id: str, day: pd.Timestamp) -> float | None:
+        return None if stock_id == "A" else 100.0
+
+    result = select_periodic_rebalances(
+        signals, calendar, lookup, rebalance_every=2, top_n=2
+    )
+
+    assert result.candidates == 2
+    assert result.rejected_missing_price == 1
+    assert [signal.stock_id for signal in result.signals] == ["B"]
 
 
 @pytest.mark.unit
