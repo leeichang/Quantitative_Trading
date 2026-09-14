@@ -307,7 +307,7 @@ def run_walk_forward(
     by_date: dict[pd.Timestamp, list[Decision]],
     tiers: dict[str, Tier],
     rng: np.random.Generator,
-    edge_z: float,
+    edge_z: float | None,
     horizon: int,
     oos_start_override: pd.Timestamp | None = None,
     dev_end: pd.Timestamp | None = None,
@@ -407,14 +407,14 @@ def run_walk_forward(
 
                 cost = DEFAULT.round_trip_rate(tiers.get(d.stock_id, Tier.MID))
                 net = expected - cost
-                if net <= 0:
-                    continue
-
-                # 優勢須大於一個標準誤，否則與 0 在統計上分不開
                 bin_index = find_bin(d.score, calibrator.bins)
                 se = se_by_bin.get(bin_index) if bin_index is not None else None
-                if se is None or net < edge_z * se:
-                    continue
+                if edge_z is not None:
+                    if net <= 0:
+                        continue
+                    # E2：優勢須大於指定標準誤；E1/E3 不先經過此門檻。
+                    if se is None or net < edge_z * se:
+                        continue
 
                 strategy.append((decision_date, d, net))
 
@@ -536,6 +536,19 @@ def main() -> None:
         parser.error("--top-percent 必須落在 (0, 100]")
     if args.rebalance_every is not None and args.rebalance_every < 1:
         parser.error("--rebalance-every 必須為正")
+    if args.top_percent is not None and args.top_percent not in {5.0, 10.0, 20.0}:
+        parser.error("E1 開發集候選只允許 --top-percent 5/10/20")
+    if args.rebalance_every is not None and args.rebalance_every != 60:
+        parser.error("E3 開發集候選只允許 --rebalance-every 60")
+    if args.edge_z not in {DEFAULT_EDGE_Z, 1.5, 2.0, 2.5}:
+        parser.error("E2 開發集候選只允許 --edge-z 1.5/2.0/2.5")
+    tuning = (
+        args.top_percent is not None
+        or args.rebalance_every is not None
+        or args.edge_z != DEFAULT_EDGE_Z
+    )
+    if tuning and date.fromisoformat(args.end) > date(2023, 12, 29):
+        parser.error("門檻選參只能載入至 2023-12-29；請設定 --end 2023-12-29")
 
     db_path = Path(args.db)
 
@@ -651,7 +664,8 @@ def main() -> None:
                 by_date,
                 tiers,
                 rng,
-                args.edge_z,
+                (None if args.top_percent is not None
+                 or args.rebalance_every is not None else args.edge_z),
                 horizon,
                 oos_start_override=oos_start_override,
                 dev_end=dev_end,
@@ -673,6 +687,7 @@ def main() -> None:
                 strategy_signals = select_periodic_rebalances(
                     strategy_signals,
                     oos_calendar,
+                    price_lookup,
                     args.rebalance_every,
                     args.slots,
                 )
@@ -706,7 +721,9 @@ def main() -> None:
             rows.append({
                 "family": family.name, "horizon": horizon, "folds": folds,
                 "calibration_failures": failures, "signals": len(strategy_signals),
-                "trades": strategy.n_trades,
+                "trades": strategy.opened_signals,
+                "slot_blocked": strategy.slot_blocked_signals,
+                "rejected": strategy.rejected_signals,
                 "effective": effective_samples(trade_dates, horizon, DECISION_STRIDE),
                 "total": strategy.total_return,
                 "annualized": strategy.annualized_return,
@@ -812,7 +829,7 @@ def report(rows: list[dict], n_trials: int, slots: int) -> None:
               f"平均停損幅度 {r['avg_trail'] * 100:.2f}%｜"
               f"觸停損出場 {r['stopped_pct'] * 100:.1f}%｜"
               f"訊號 {r['signals']} 中成交 {r['trades']}"
-              f"（槽位擋掉 {r['signals'] - r['trades']}）")
+              f"（槽位擋掉 {r['slot_blocked']}、其他拒絕 {r['rejected']}）")
         print(f"    週換手率 {r['weekly_turnover'] * 100:.1f}%｜"
               f"實際年化成本拖累 {r['annualized_cost_drag'] * 100:.2f}%")
     print()

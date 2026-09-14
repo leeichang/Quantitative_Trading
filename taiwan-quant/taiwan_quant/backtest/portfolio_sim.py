@@ -137,6 +137,10 @@ class PortfolioSimResult:
     annualized_cost_drag: float
     """實際成交成本相對期初權益的年化拖累。"""
 
+    opened_signals: int
+    slot_blocked_signals: int
+    rejected_signals: int
+
     @property
     def n_trades(self) -> int:
         return len(self.trades)
@@ -242,6 +246,10 @@ def simulate_portfolio(
     equity_values: list[float] = []
     slot_days = 0
     max_concurrent = 0
+    opened_signals = 0
+    slot_blocked_signals = 0
+    rejected_signals = 0
+    opened_allocations: list[tuple[float, float]] = []
 
     for day in calendar:
         # ── 1. 出場（先釋放槽位，同一天才可能有新倉接上） ──
@@ -262,15 +270,19 @@ def simulate_portfolio(
         open_positions = still_open
 
         # ── 2. 進場 ──
-        for s in by_date.get(day, []):
+        batch = by_date.get(day, [])
+        for index, s in enumerate(batch):
             if len(open_positions) >= n_slots:
+                slot_blocked_signals += len(batch) - index
                 break
             if any(p.stock_id == s.stock_id for p in open_positions):
                 # 同一檔已在持倉 → 再開一次是加碼，不是分散
+                rejected_signals += 1
                 continue
 
             entry_price = price_lookup(s.stock_id, day)
             if entry_price is None or entry_price <= 0:
+                rejected_signals += 1
                 continue
 
             held_value = sum(
@@ -281,9 +293,13 @@ def simulate_portfolio(
             target = (cash + held_value) / n_slots
             allocation = min(target, cash)
             if allocation <= 0:
+                rejected_signals += 1
                 continue
 
             cash -= allocation
+            opened_signals += 1
+            cost_rate = cost.round_trip_rate(s.tier)
+            opened_allocations.append((allocation, cost_rate))
             open_positions.append(_OpenPosition(
                 stock_id=s.stock_id,
                 entry_date=day,
@@ -291,7 +307,7 @@ def simulate_portfolio(
                 allocation=allocation,
                 entry_price=entry_price,
                 gross_return=s.gross_return,
-                cost_rate=cost.round_trip_rate(s.tier),
+                cost_rate=cost_rate,
             ))
 
         # ── 3. 逐日標記市值 ──
@@ -314,10 +330,12 @@ def simulate_portfolio(
         for i in range(1, len(equity_values))
         if equity_values[i - 1] > 0
     ]
-    traded_capital = sum(trade.allocation for trade in closed)
+    traded_capital = sum(allocation for allocation, _ in opened_allocations)
     elapsed_weeks = len(calendar) / 5.0
     elapsed_years = len(calendar) / TRADING_DAYS_PER_YEAR
-    realized_cost = sum(trade.allocation * trade.cost_rate for trade in closed)
+    realized_cost = sum(
+        allocation * cost_rate for allocation, cost_rate in opened_allocations
+    )
 
     return PortfolioSimResult(
         equity=equity,
@@ -331,4 +349,7 @@ def simulate_portfolio(
         n_slots=n_slots,
         weekly_turnover=(traded_capital / elapsed_weeks if elapsed_weeks else 0.0),
         annualized_cost_drag=(realized_cost / elapsed_years if elapsed_years else 0.0),
+        opened_signals=opened_signals,
+        slot_blocked_signals=slot_blocked_signals,
+        rejected_signals=rejected_signals,
     )
