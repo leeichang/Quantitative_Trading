@@ -185,6 +185,23 @@ def test_never_exceeds_slot_count() -> None:
 
     assert result.n_trades == 3
     assert result.max_concurrent == 3
+    assert result.opened_signals == 3
+    assert result.slot_blocked_signals == 2
+
+
+@pytest.mark.unit
+def test_open_position_counts_as_entry_and_turnover_before_it_closes() -> None:
+    """期末未平倉仍是已成交，不能從成交比與換手率消失。"""
+    cal = calendar(5)
+    sig = signal(cal[0], cal[-1] + pd.Timedelta(days=30), gross_return=0.0)
+
+    result = simulate_portfolio(
+        [sig], flat_prices(["A"], cal), cal, n_slots=1, cost=ZERO_COST
+    )
+
+    assert result.n_trades == 0
+    assert result.opened_signals == 1
+    assert result.weekly_turnover == pytest.approx(1.0)
 
 
 @pytest.mark.unit
