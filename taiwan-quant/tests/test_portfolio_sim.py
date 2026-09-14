@@ -257,6 +257,32 @@ def test_round_trip_cost_charged_once() -> None:
     )
 
 
+@pytest.mark.unit
+def test_turnover_and_annual_cost_drag_are_recomputed_from_trades() -> None:
+    """
+    10 個交易日內完成兩次全額換倉：
+      第二筆可配置資金是扣除第一筆成本後的 1-cost。
+      單邊總換手 = 1 + (1-cost)，再除以兩週。
+    """
+    from taiwan_quant.config.costs import DEFAULT
+
+    cal = calendar(10)
+    sigs = [
+        signal(cal[0], cal[4], stock_id="A", gross_return=0.0),
+        signal(cal[4], cal[9], stock_id="B", gross_return=0.0),
+    ]
+    result = simulate_portfolio(
+        sigs, flat_prices(["A", "B"], cal), cal, n_slots=1, cost=DEFAULT
+    )
+
+    expected_cost = DEFAULT.round_trip_rate(Tier.LARGE)
+    traded = 2.0 - expected_cost
+    assert result.weekly_turnover == pytest.approx(traded / 2.0)
+    assert result.annualized_cost_drag == pytest.approx(
+        traded * expected_cost * 252 / 10
+    )
+
+
 # ══════════════════════════════════════════════════════════════
 # 曝險與逐日市值
 # ══════════════════════════════════════════════════════════════
