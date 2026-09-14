@@ -131,6 +131,11 @@ class PortfolioSimResult:
 
     max_concurrent: int
     n_slots: int
+    weekly_turnover: float
+    """由實際成交配置推導的平均週換手率（單邊）。"""
+
+    annualized_cost_drag: float
+    """實際成交成本相對期初權益的年化拖累。"""
 
     @property
     def n_trades(self) -> int:
@@ -146,6 +151,8 @@ class PortfolioSimResult:
             f"Sharpe          {sharpe}",
             f"最大回撤        {self.max_drawdown * 100:.2f}%",
             f"曝險            {self.exposure * 100:.1f}%",
+            f"週換手率        {self.weekly_turnover * 100:.1f}%",
+            f"年化成本拖累    {self.annualized_cost_drag * 100:.2f}%",
         ])
 
 
@@ -307,6 +314,10 @@ def simulate_portfolio(
         for i in range(1, len(equity_values))
         if equity_values[i - 1] > 0
     ]
+    traded_capital = sum(trade.allocation for trade in closed)
+    elapsed_weeks = len(calendar) / 5.0
+    elapsed_years = len(calendar) / TRADING_DAYS_PER_YEAR
+    realized_cost = sum(trade.allocation * trade.cost_rate for trade in closed)
 
     return PortfolioSimResult(
         equity=equity,
@@ -318,4 +329,6 @@ def simulate_portfolio(
         exposure=slot_days / (n_slots * len(calendar)),
         max_concurrent=max_concurrent,
         n_slots=n_slots,
+        weekly_turnover=(traded_capital / elapsed_weeks if elapsed_weeks else 0.0),
+        annualized_cost_drag=(realized_cost / elapsed_years if elapsed_years else 0.0),
     )

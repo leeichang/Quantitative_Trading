@@ -82,6 +82,10 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_return_calibrator,
 )
 from taiwan_quant.validation.stats import deflated_sharpe_ratio  # noqa: E402
+from taiwan_quant.validation.thresholds import (  # noqa: E402
+    filter_relative_top,
+    select_periodic_rebalances,
+)
 from taiwan_quant.validation.walk_forward import walk_forward_folds  # noqa: E402
 
 PULLBACK_QUANTILE = 0.80
@@ -487,6 +491,14 @@ def main() -> None:
         help="固定第一個 OOS fold 的訓練集，用來量測模型不更新時的衰退",
     )
     parser.add_argument("--edge-z", type=float, default=DEFAULT_EDGE_Z)
+    parser.add_argument(
+        "--top-percent", type=float, default=None,
+        help="E1：每個決策日只保留期望淨報酬前 N%%（開發集候選 5/10/20）",
+    )
+    parser.add_argument(
+        "--rebalance-every", type=int, default=None,
+        help="E3：每隔指定交易日完整重選 Top N（候選值 60）",
+    )
     parser.add_argument("--slots", type=int, default=TOP_N)
     parser.add_argument("--universe-size", type=int, default=UNIVERSE_SIZE)
     parser.add_argument("--basis", default=DEFAULT_UNIVERSE_BASIS,
@@ -518,6 +530,12 @@ def main() -> None:
         parser.error("--dev-end 必須早於 --oos-start")
     if args.unlock_frozen and not (args.frozen_reason or "").strip():
         parser.error("--unlock-frozen 必須同時提供非空白的 --frozen-reason")
+    if args.top_percent is not None and args.rebalance_every is not None:
+        parser.error("--top-percent 與 --rebalance-every 是不同方案，不可同時使用")
+    if args.top_percent is not None and not 0 < args.top_percent <= 100:
+        parser.error("--top-percent 必須落在 (0, 100]")
+    if args.rebalance_every is not None and args.rebalance_every < 1:
+        parser.error("--rebalance-every 必須為正")
 
     db_path = Path(args.db)
 
@@ -529,6 +547,12 @@ def main() -> None:
           f"每個 fold 測試 {TEST_WINDOW_DAYS} 日")
     print(f"移動停損分位 {PULLBACK_QUANTILE:.0%}｜優勢門檻 {args.edge_z:.1f} 個標準誤"
           f"｜組合槽位 {args.slots}｜標的池 {args.universe_size} 檔/季")
+    if args.top_percent is not None:
+        print(f"門檻方案 E1：逐決策日期望淨報酬前 {args.top_percent:g}%")
+    elif args.rebalance_every is not None:
+        print(f"門檻方案 E3：每 {args.rebalance_every} 個交易日完整重選 Top {args.slots}")
+    else:
+        print(f"門檻方案 E2/基線：edge_z={args.edge_z:g}")
     if oos_start_override is not None:
         mode = "固定模型（不擴張訓練集）" if args.freeze_model else "擴張式 walk-forward"
         print(f"OOS 切分模式：{mode}")
@@ -640,8 +664,21 @@ def main() -> None:
                 continue
 
             oos_calendar = [d for d in calendar if d >= oos_start]
+            strategy_signals = to_signals(strat_sig, calendar, tiers)
+            if args.top_percent is not None:
+                strategy_signals = filter_relative_top(
+                    strategy_signals, args.top_percent
+                )
+            elif args.rebalance_every is not None:
+                strategy_signals = select_periodic_rebalances(
+                    strategy_signals,
+                    oos_calendar,
+                    args.rebalance_every,
+                    args.slots,
+                )
+
             strategy = simulate_portfolio(
-                to_signals(strat_sig, calendar, tiers),
+                strategy_signals,
                 price_lookup, oos_calendar, n_slots=args.slots, cost=DEFAULT)
             random_sim = simulate_portfolio(
                 to_signals(rand_sig, calendar, tiers),
@@ -663,18 +700,20 @@ def main() -> None:
                 for etf, curve in etf_curves.items()
             }
 
-            trade_dates = sorted({d for d, _, _ in strat_sig})
+            trade_dates = sorted({signal.decision_date for signal in strategy_signals})
             exits = [d.exit_reason for _, d, _ in strat_sig]
 
             rows.append({
                 "family": family.name, "horizon": horizon, "folds": folds,
-                "calibration_failures": failures, "signals": len(strat_sig),
+                "calibration_failures": failures, "signals": len(strategy_signals),
                 "trades": strategy.n_trades,
                 "effective": effective_samples(trade_dates, horizon, DECISION_STRIDE),
                 "total": strategy.total_return,
                 "annualized": strategy.annualized_return,
                 "sharpe": strategy.sharpe, "maxdd": strategy.max_drawdown,
                 "exposure": strategy.exposure,
+                "weekly_turnover": strategy.weekly_turnover,
+                "annualized_cost_drag": strategy.annualized_cost_drag,
                 "random_total": random_sim.total_return,
                 "random_maxdd": random_sim.max_drawdown,
                 "bh_return": bh_return, "bh_maxdd": bh_maxdd,
@@ -774,6 +813,8 @@ def report(rows: list[dict], n_trials: int, slots: int) -> None:
               f"觸停損出場 {r['stopped_pct'] * 100:.1f}%｜"
               f"訊號 {r['signals']} 中成交 {r['trades']}"
               f"（槽位擋掉 {r['signals'] - r['trades']}）")
+        print(f"    週換手率 {r['weekly_turnover'] * 100:.1f}%｜"
+              f"實際年化成本拖累 {r['annualized_cost_drag'] * 100:.2f}%")
     print()
 
     print("=" * 112)
