@@ -450,10 +450,13 @@ def to_signals(
     return signals
 
 
-def make_price_lookup(by_stock: dict[str, pd.DataFrame]) -> PriceLookup:
-    """以收盤價逐日標記市值；缺當日報價時沿用前一日"""
+def make_price_lookup(
+    by_stock: dict[str, pd.DataFrame], column: str = "close"
+) -> PriceLookup:
+    """建立價格查詢；市值預設用收盤價，E3 成交則明確傳入開盤價。"""
     tables = {
-        sid: bars["close"].astype(float) for sid, bars in by_stock.items()
+        sid: bars[column].astype(float) for sid, bars in by_stock.items()
+        if column in bars
     }
 
     def lookup(stock_id: str, day: pd.Timestamp) -> float | None:
@@ -628,6 +631,7 @@ def main() -> None:
     calendar = trading_calendar(by_stock)
     decision_dates = calendar[WARMUP_DAYS::DECISION_STRIDE]
     price_lookup = make_price_lookup(by_stock)
+    execution_lookup = make_price_lookup(by_stock, column="open")
 
     print(f"交易日曆 {len(calendar)} 天｜決策日 {len(decision_dates)} 個", flush=True)
 
@@ -679,18 +683,34 @@ def main() -> None:
 
             oos_calendar = [d for d in calendar if d >= oos_start]
             strategy_signals = to_signals(strat_sig, calendar, tiers)
+            selected_decisions = list(strat_sig)
+            selector_candidates = len(strategy_signals)
+            selector_rejected = 0
             if args.top_percent is not None:
                 strategy_signals = filter_relative_top(
                     strategy_signals, args.top_percent
                 )
+                selected_keys = {
+                    (signal.decision_date, signal.stock_id)
+                    for signal in strategy_signals
+                }
+                selected_decisions = [
+                    pick for pick in strat_sig
+                    if (pick[0], pick[1].stock_id) in selected_keys
+                ]
+                selector_candidates = len(strategy_signals)
             elif args.rebalance_every is not None:
-                strategy_signals = select_periodic_rebalances(
+                periodic = select_periodic_rebalances(
                     strategy_signals,
                     oos_calendar,
-                    price_lookup,
+                    execution_lookup,
                     args.rebalance_every,
                     args.slots,
                 )
+                strategy_signals = list(periodic.signals)
+                selector_candidates = periodic.candidates
+                selector_rejected = periodic.rejected_missing_price
+                selected_decisions = []
 
             strategy = simulate_portfolio(
                 strategy_signals,
@@ -716,14 +736,14 @@ def main() -> None:
             }
 
             trade_dates = sorted({signal.decision_date for signal in strategy_signals})
-            exits = [d.exit_reason for _, d, _ in strat_sig]
+            exits = [d.exit_reason for _, d, _ in selected_decisions]
 
             rows.append({
                 "family": family.name, "horizon": horizon, "folds": folds,
-                "calibration_failures": failures, "signals": len(strategy_signals),
+                "calibration_failures": failures, "signals": selector_candidates,
                 "trades": strategy.opened_signals,
                 "slot_blocked": strategy.slot_blocked_signals,
-                "rejected": strategy.rejected_signals,
+                "rejected": strategy.rejected_signals + selector_rejected,
                 "effective": effective_samples(trade_dates, horizon, DECISION_STRIDE),
                 "total": strategy.total_return,
                 "annualized": strategy.annualized_return,
@@ -737,8 +757,13 @@ def main() -> None:
                 "etf": etf_stats,
                 "oos_start": oos_start, "oos_end": oos_calendar[-1],
                 "oos_days": len(oos_calendar),
-                "stopped_pct": exits.count("trailing_stop") / len(exits),
-                "avg_trail": float(np.mean([d.trail_pct for _, d, _ in strat_sig])),
+                "stopped_pct": (
+                    exits.count("trailing_stop") / len(exits) if exits else None
+                ),
+                "avg_trail": (
+                    float(np.mean([d.trail_pct for _, d, _ in selected_decisions]))
+                    if selected_decisions else None
+                ),
                 "note": "",
             })
 
@@ -825,9 +850,12 @@ def report(rows: list[dict], n_trials: int, slots: int) -> None:
 
     print("移動停損行為：")
     for r in scored:
-        print(f"  {r['family']} × {r['horizon']} 日｜"
-              f"平均停損幅度 {r['avg_trail'] * 100:.2f}%｜"
-              f"觸停損出場 {r['stopped_pct'] * 100:.1f}%｜"
+        behavior = (
+            f"平均停損幅度 {r['avg_trail'] * 100:.2f}%｜"
+            f"觸停損出場 {r['stopped_pct'] * 100:.1f}%"
+            if r["stopped_pct"] is not None else "定期全換倉（停損統計不適用）"
+        )
+        print(f"  {r['family']} × {r['horizon']} 日｜{behavior}｜"
               f"訊號 {r['signals']} 中成交 {r['trades']}"
               f"（槽位擋掉 {r['slot_blocked']}、其他拒絕 {r['rejected']}）")
         print(f"    週換手率 {r['weekly_turnover'] * 100:.1f}%｜"

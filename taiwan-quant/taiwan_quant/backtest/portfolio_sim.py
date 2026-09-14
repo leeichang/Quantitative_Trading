@@ -77,6 +77,8 @@ class Signal:
     """排名依據；槽位不足時取高的"""
 
     tier: Tier
+    entry_price: float | None = None
+    """已知成交價；E3 用 T+1 開盤價。None 時由 price_lookup 取得。"""
 
     def __post_init__(self) -> None:
         if self.exit_date < self.decision_date:
@@ -85,6 +87,10 @@ class Signal:
             )
         if not math.isfinite(self.gross_return):
             raise ValueError(f"gross_return 必須為有限值，得到 {self.gross_return}")
+        if self.entry_price is not None and (
+            not math.isfinite(self.entry_price) or self.entry_price <= 0
+        ):
+            raise ValueError(f"entry_price 必須為正有限值，得到 {self.entry_price}")
 
 
 @dataclass(frozen=True)
@@ -280,7 +286,7 @@ def simulate_portfolio(
                 rejected_signals += 1
                 continue
 
-            entry_price = price_lookup(s.stock_id, day)
+            entry_price = s.entry_price or price_lookup(s.stock_id, day)
             if entry_price is None or entry_price <= 0:
                 rejected_signals += 1
                 continue

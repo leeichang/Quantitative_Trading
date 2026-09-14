@@ -7,17 +7,26 @@
 from __future__ import annotations
 
 import math
-from dataclasses import replace
+from dataclasses import dataclass, replace
 
 import pandas as pd
 
 from taiwan_quant.backtest.portfolio_sim import PriceLookup, Signal
 
 
+@dataclass(frozen=True)
+class PeriodicSelectionResult:
+    """定期換倉選擇及缺價稽核。"""
+
+    signals: tuple[Signal, ...]
+    candidates: int
+    rejected_missing_price: int
+
+
 def filter_relative_top(
     signals: list[Signal],
     top_percent: float,
-) -> list[Signal]:
+) -> PeriodicSelectionResult:
     """每個決策日只保留排名分數前 ``top_percent`` 的訊號。"""
     if not 0 < top_percent <= 100:
         raise ValueError(f"top_percent 必須落在 (0, 100]，得到 {top_percent}")
@@ -47,30 +56,43 @@ def select_periodic_rebalances(
     if top_n < 1:
         raise ValueError(f"top_n 必須為正，得到 {top_n}")
     if not calendar:
-        return []
+        return PeriodicSelectionResult((), 0, 0)
 
-    nodes = list(calendar[::rebalance_every])
-    if nodes[-1] != calendar[-1]:
-        nodes.append(calendar[-1])
-    scheduled = set(nodes[:-1])
+    positions = list(range(0, len(calendar), rebalance_every))
+    # 決策在節點收盤後形成，成交一律在下一交易日；最後一個無 T+1 的節點不用。
+    positions = [position for position in positions if position + 1 < len(calendar)]
+    scheduled = {calendar[position] for position in positions[:-1]}
     by_date: dict[pd.Timestamp, list[Signal]] = {}
     for signal in signals:
         if signal.decision_date in scheduled:
             by_date.setdefault(signal.decision_date, []).append(signal)
 
     selected: list[Signal] = []
-    next_node = {day: nodes[index + 1] for index, day in enumerate(nodes[:-1])}
+    rejected = 0
+    candidates = 0
+    execution = {
+        calendar[position]: calendar[position + 1] for position in positions
+    }
+    next_execution = {
+        calendar[position]: calendar[positions[index + 1] + 1]
+        for index, position in enumerate(positions[:-1])
+    }
     for day in sorted(by_date):
         ranked = sorted(by_date[day], key=lambda item: (-item.rank_score, item.stock_id))
-        exit_day = next_node[day]
+        entry_day = execution[day]
+        exit_day = next_execution[day]
         for signal in ranked[:top_n]:
-            entry_price = price_lookup(signal.stock_id, day)
+            candidates += 1
+            entry_price = price_lookup(signal.stock_id, entry_day)
             exit_price = price_lookup(signal.stock_id, exit_day)
             if entry_price is None or exit_price is None or entry_price <= 0:
+                rejected += 1
                 continue
             selected.append(replace(
                 signal,
+                decision_date=entry_day,
                 exit_date=exit_day,
                 gross_return=exit_price / entry_price - 1.0,
+                entry_price=entry_price,
             ))
-    return selected
+    return PeriodicSelectionResult(tuple(selected), candidates, rejected)
