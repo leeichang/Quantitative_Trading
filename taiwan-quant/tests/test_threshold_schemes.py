@@ -12,6 +12,7 @@ from taiwan_quant.validation.thresholds import (
     filter_relative_top,
     select_periodic_rebalances,
 )
+from taiwan_quant.validation.trial_summary import summarize_trials
 
 
 def _signal(day: pd.Timestamp, stock_id: str, score: float) -> Signal:
@@ -123,6 +124,24 @@ def test_execution_price_does_not_fill_forward_across_suspension() -> None:
 
     assert execution("A", suspended) is None
     assert mark_to_market("A", suspended) == pytest.approx(101.0)
+
+
+@pytest.mark.unit
+def test_random_trial_summary_uses_median_not_mean() -> None:
+    """三次手算：報酬中位數 2、回撤中位數 0.2；極端值不得主導。"""
+    result = summarize_trials([1.0, 2.0, 100.0], [0.1, 0.2, 0.9])
+
+    assert result.n_trials == 3
+    assert result.median_total_return == pytest.approx(2.0)
+    assert result.median_max_drawdown == pytest.approx(0.2)
+
+
+@pytest.mark.unit
+def test_random_trial_summary_rejects_mismatched_or_empty_trials() -> None:
+    with pytest.raises(ValueError, match="不可為空"):
+        summarize_trials([], [])
+    with pytest.raises(ValueError, match="長度"):
+        summarize_trials([0.1], [0.1, 0.2])
 
 
 @pytest.mark.unit
