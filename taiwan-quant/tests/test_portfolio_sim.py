@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 import pandas as pd
 import pytest
 
@@ -217,6 +219,20 @@ def test_picks_highest_rank_score_first() -> None:
     )
 
     assert [t.stock_id for t in result.trades] == ["高"]
+
+
+@pytest.mark.unit
+def test_closed_trade_preserves_ranking_audit_fields() -> None:
+    """實際成交必須能追溯當時排名分數與完整同分群大小。"""
+    cal = list(pd.date_range("2023-01-02", periods=5, freq="B"))
+    lookup = flat_prices(["A"], cal, 100.0)
+    candidate = signal(cal[0], cal[2], stock_id="A", rank_score=0.25)
+    candidate = dataclasses.replace(candidate, tie_count=4)
+
+    result = simulate_portfolio([candidate], lookup, cal, n_slots=1)
+
+    assert result.trades[0].rank_score == pytest.approx(0.25)
+    assert result.trades[0].tie_count == 4
 
 
 @pytest.mark.unit

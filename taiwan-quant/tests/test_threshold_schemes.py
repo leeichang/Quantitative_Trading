@@ -127,6 +127,21 @@ def test_periodic_rebalance_audits_top_candidate_with_missing_price() -> None:
 
 
 @pytest.mark.unit
+def test_periodic_rebalance_records_full_tie_group_size() -> None:
+    """Top 2 從三檔同分股選出時，每筆都必須留下「同分 3 檔」。"""
+    calendar = list(pd.date_range("2023-01-02", periods=4, freq="B"))
+    signals = [_signal(calendar[0], sid, 1.0) for sid in ("A", "B", "C")]
+
+    result = select_periodic_rebalances(
+        signals, calendar, lambda _stock, _day: 100.0,
+        rebalance_every=2, top_n=2,
+    )
+
+    assert len(result.signals) == 2
+    assert [signal.tie_count for signal in result.signals] == [3, 3]
+
+
+@pytest.mark.unit
 def test_execution_price_does_not_fill_forward_across_suspension() -> None:
     """成交價必須精確命中 T+1；只有逐日市值可沿用舊收盤價。"""
     first, suspended = pd.Timestamp("2023-01-02"), pd.Timestamp("2023-01-03")
