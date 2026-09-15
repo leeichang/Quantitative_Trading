@@ -1,0 +1,950 @@
+{
+  "end": "2023-12-29",
+  "rows": [
+    {
+      "scheme": "E1-top5",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 1722,
+      "trades": 65,
+      "signal_trade_ratio": 26.49230769230769,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top10",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 3318,
+      "trades": 65,
+      "signal_trade_ratio": 51.04615384615385,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top20",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 6510,
+      "trades": 65,
+      "signal_trade_ratio": 100.15384615384616,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z1.5",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 31035,
+      "trades": 65,
+      "signal_trade_ratio": 477.46153846153845,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 30882,
+      "trades": 65,
+      "signal_trade_ratio": 475.10769230769233,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2.5",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 30638,
+      "trades": 65,
+      "signal_trade_ratio": 471.3538461538462,
+      "selector_rejected": 0,
+      "total_return": 0.9389346563269059,
+      "sharpe": 0.6814249203260392,
+      "max_drawdown": 0.3767828422883433,
+      "weekly_turnover": 0.09928894344397343,
+      "annualized_cost_drag": 0.05659326322417518,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E3-rebalance60",
+      "family": "動能突破",
+      "universe_size": 150,
+      "signals": 57,
+      "trades": 57,
+      "signal_trade_ratio": 1.0,
+      "selector_rejected": 0,
+      "total_return": 2.2959897552002118,
+      "sharpe": 1.0419213834314973,
+      "max_drawdown": 0.41020221394915696,
+      "weekly_turnover": 0.1235540594521068,
+      "annualized_cost_drag": 0.07224409881754439,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top5",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 1596,
+      "trades": 64,
+      "signal_trade_ratio": 24.9375,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top10",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 2964,
+      "trades": 64,
+      "signal_trade_ratio": 46.3125,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top20",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 5781,
+      "trades": 64,
+      "signal_trade_ratio": 90.328125,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z1.5",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 28498,
+      "trades": 64,
+      "signal_trade_ratio": 445.28125,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 27896,
+      "trades": 64,
+      "signal_trade_ratio": 435.875,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2.5",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 27756,
+      "trades": 64,
+      "signal_trade_ratio": 433.6875,
+      "selector_rejected": 0,
+      "total_return": 0.3368085502939664,
+      "sharpe": 0.40758244957839934,
+      "max_drawdown": 0.35089904482907724,
+      "weekly_turnover": 0.09757152439375363,
+      "annualized_cost_drag": 0.05266754772335792,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E3-rebalance60",
+      "family": "籌碼跟隨",
+      "universe_size": 150,
+      "signals": 57,
+      "trades": 57,
+      "signal_trade_ratio": 1.0,
+      "selector_rejected": 0,
+      "total_return": 0.7502701441816435,
+      "sharpe": 0.6448413810118178,
+      "max_drawdown": 0.34616148212196357,
+      "weekly_turnover": 0.09364290723837956,
+      "annualized_cost_drag": 0.05054694304076148,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5983193697756263,
+          "max_drawdown": 0.35568829450507233,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top5",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 1725,
+      "trades": 67,
+      "signal_trade_ratio": 25.746268656716417,
+      "selector_rejected": 0,
+      "total_return": 0.811545891120546,
+      "sharpe": 0.6695314314294514,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.11296121966522882,
+      "annualized_cost_drag": 0.06596609659771863,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top10",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 3321,
+      "trades": 67,
+      "signal_trade_ratio": 49.56716417910448,
+      "selector_rejected": 0,
+      "total_return": 0.811545891120546,
+      "sharpe": 0.6695314314294514,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.11296121966522882,
+      "annualized_cost_drag": 0.06596609659771863,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E1-top20",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 6513,
+      "trades": 67,
+      "signal_trade_ratio": 97.2089552238806,
+      "selector_rejected": 0,
+      "total_return": 0.811545891120546,
+      "sharpe": 0.6695314314294514,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.11296121966522882,
+      "annualized_cost_drag": 0.06596609659771863,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z1.5",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 32029,
+      "trades": 67,
+      "signal_trade_ratio": 478.04477611940297,
+      "selector_rejected": 0,
+      "total_return": 0.811545891120546,
+      "sharpe": 0.6695314314294514,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.11296121966522882,
+      "annualized_cost_drag": 0.06596609659771863,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 31632,
+      "trades": 67,
+      "signal_trade_ratio": 472.1194029850746,
+      "selector_rejected": 0,
+      "total_return": 0.9186037750973846,
+      "sharpe": 0.7246479166550137,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.1191524802835196,
+      "annualized_cost_drag": 0.06960302164261382,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E2-z2.5",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 31146,
+      "trades": 67,
+      "signal_trade_ratio": 464.86567164179104,
+      "selector_rejected": 0,
+      "total_return": 0.9186037750973846,
+      "sharpe": 0.7246479166550137,
+      "max_drawdown": 0.3086655388879508,
+      "weekly_turnover": 0.1191524802835196,
+      "annualized_cost_drag": 0.06960302164261382,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    },
+    {
+      "scheme": "E3-rebalance60",
+      "family": "均值回歸",
+      "universe_size": 150,
+      "signals": 57,
+      "trades": 57,
+      "signal_trade_ratio": 1.0,
+      "selector_rejected": 0,
+      "total_return": 0.11599440037743536,
+      "sharpe": 0.22384392267558254,
+      "max_drawdown": 0.5242737003334346,
+      "weekly_turnover": 0.08196630816715307,
+      "annualized_cost_drag": 0.04761130059958037,
+      "cost_model": "taiwan_quant.config.costs.DEFAULT",
+      "benchmarks": {
+        "equal_weight_150": {
+          "total_return": 1.1856618794201008,
+          "max_drawdown": 0.29538483499833573,
+          "sharpe": 1.0727461982863038,
+          "constituents": 150
+        },
+        "etf": {
+          "0050": {
+            "total_return": 1.1080260842633987,
+            "max_drawdown": 0.3382763580560784,
+            "sharpe": 0.939599278732691
+          },
+          "0051": {
+            "total_return": 1.9999249982368372,
+            "max_drawdown": 0.3130023973276556,
+            "sharpe": 1.419506102699268
+          },
+          "0056": {
+            "total_return": 1.078694611215643,
+            "max_drawdown": 0.2585635015498705,
+            "sharpe": 1.1574877758648998
+          }
+        },
+        "random_100_median": {
+          "total_return": 0.5929947707913851,
+          "max_drawdown": 0.35290921440122724,
+          "n_trials": 100
+        }
+      }
+    }
+  ]
+}
