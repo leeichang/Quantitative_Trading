@@ -96,4 +96,6 @@ frontend/dist/
 # 保留：.planning/、docs/、reports/、所有原始碼、README、pyproject、requirements
 
 # ---------- 外部參考專案（clone 來研究用，不納入版控）----------
-external/
+# 前面的斜線是必要的：沒有它會連 taiwan_quant/validation/external/ 一起擋掉，
+# 而那裡放的是要納入版控的 vendored 程式碼
+/external/
