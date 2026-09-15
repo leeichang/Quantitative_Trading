@@ -257,8 +257,10 @@ def test_build_dataset_does_not_mutate_input() -> None:
 # 等權買進持有權益曲線
 # ══════════════════════════════════════════════════════════════
 
-from taiwan_quant.validation.benchmarks import equal_weight_equity  # noqa: E402
-from taiwan_quant.validation.benchmarks import equity_curve_statistics  # noqa: E402
+from taiwan_quant.validation.benchmarks import (  # noqa: E402
+    equal_weight_equity,
+    equity_curve_statistics,
+)
 
 
 @pytest.mark.unit

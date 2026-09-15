@@ -28,8 +28,39 @@ CLAUDE.md 要求每份回測報告都要並列：
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import pandas as pd
+
+TRADING_DAYS_PER_YEAR = 252.0
+
+
+@dataclass(frozen=True)
+class EquityCurveStatistics:
+    """權益曲線的可比較績效摘要。"""
+
+    total_return: float
+    max_drawdown: float
+    sharpe: float | None
+
+
+def equity_curve_statistics(curve: pd.Series) -> EquityCurveStatistics:
+    """以同一口徑計算總報酬、最大回撤與年化 Sharpe。"""
+    if curve.empty:
+        raise ValueError("權益曲線不可為空")
+    values = curve.astype(float)
+    peak = values.cummax()
+    returns = values.pct_change().dropna()
+    std = float(returns.std(ddof=1)) if len(returns) >= 2 else 0.0
+    sharpe = (
+        float(returns.mean()) / std * math.sqrt(TRADING_DAYS_PER_YEAR)
+        if std > 0 else None
+    )
+    return EquityCurveStatistics(
+        total_return=float(values.iloc[-1] / values.iloc[0] - 1.0),
+        max_drawdown=float(((peak - values) / peak).max()),
+        sharpe=sharpe,
+    )
 
 
 def buy_and_hold_return(
