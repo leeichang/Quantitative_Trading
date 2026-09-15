@@ -258,6 +258,7 @@ def test_build_dataset_does_not_mutate_input() -> None:
 # ══════════════════════════════════════════════════════════════
 
 from taiwan_quant.validation.benchmarks import equal_weight_equity  # noqa: E402
+from taiwan_quant.validation.benchmarks import equity_curve_statistics  # noqa: E402
 
 
 @pytest.mark.unit
@@ -267,6 +268,21 @@ def test_equal_weight_equity_starts_at_one() -> None:
 
     curve = equal_weight_equity(data, cal)
     assert curve.iloc[0] == pytest.approx(1.0)
+
+
+@pytest.mark.unit
+def test_equity_curve_statistics_match_hand_calculation() -> None:
+    """
+    權益 1→2→2：日報酬 [1, 0]，樣本標準差 sqrt(0.5)，
+    Sharpe = 0.5 / sqrt(0.5) * sqrt(252) = sqrt(126)。
+    """
+    curve = pd.Series([1.0, 2.0, 2.0])
+
+    stats = equity_curve_statistics(curve)
+
+    assert stats.total_return == pytest.approx(1.0)
+    assert stats.max_drawdown == pytest.approx(0.0)
+    assert stats.sharpe == pytest.approx(126**0.5)
 
 
 @pytest.mark.unit
