@@ -94,3 +94,6 @@ frontend/dist/
 **/data/*.dvc
 
 # 保留：.planning/、docs/、reports/、所有原始碼、README、pyproject、requirements
+
+# ---------- 外部參考專案（clone 來研究用，不納入版控）----------
+external/
