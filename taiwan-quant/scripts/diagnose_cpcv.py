@@ -75,6 +75,9 @@ from taiwan_quant.validation.external.multipletesting import (  # noqa: E402
     deflated_sharpe_ratio,
     probability_of_backtest_overfitting,
 )
+from taiwan_quant.validation.thresholds import (  # noqa: E402
+    select_periodic_rebalances,
+)
 from taiwan_quant.validation.fold_signals import (  # noqa: E402
     select_fold_signals,
     standard_errors_by_bin,
@@ -83,8 +86,38 @@ from taiwan_quant.validation.fold_signals import (  # noqa: E402
 import scripts.validate_oos_trailing as V  # noqa: E402
 
 
+def build_signals(
+    picks: list,
+    calendar: list[pd.Timestamp],
+    tiers: dict[str, Tier],
+    price_lookup,
+    scheme: str,
+    horizon: int,
+    slots: int,
+) -> list:
+    """
+    把通過門檻的候選轉成交易訊號。
+
+    `slot`（既有機制）與 `E3`（定期全換倉）的差別不在門檻，在**成交機制**：
+
+    ```
+    slot   訊號進佇列，槽位空出來才成交      實測 99.8% 被擋掉
+    E3     每 60 個交易日固定選 Top 3       佇列消失，57/57
+    ```
+
+    E3 的 1:1 **不代表門檻開始篩選**——是佇列不存在了。兩者的路徑變異
+    要分開量，因為任意性的來源不同。
+    """
+    signals = V.to_signals(picks, calendar, tiers)
+    if scheme == "slot":
+        return signals
+    return list(select_periodic_rebalances(
+        signals, calendar, price_lookup,
+        rebalance_every=horizon, top_n=slots,
+    ).signals)
+
+
 def run_one_family(
-    family_name: str,
     by_date: dict[pd.Timestamp, list],
     tiers: dict[str, Tier],
     calendar: list[pd.Timestamp],
@@ -92,6 +125,7 @@ def run_one_family(
     horizon: int,
     edge_z: float,
     slots: int,
+    scheme: str,
 ) -> tuple[list[float], int]:
     """
     跑完一個策略族的所有 CPCV 路徑。
@@ -136,11 +170,15 @@ def run_one_family(
             path_returns.append(0.0)      # 沒有訊號 = 不進場 = 0 報酬，這是真實結果
             continue
 
+        signals = build_signals(
+            picks, calendar, tiers, price_lookup, scheme, horizon, slots
+        )
+        if not signals:
+            path_returns.append(0.0)
+            continue
+
         result = simulate_portfolio(
-            V.to_signals(picks, calendar, tiers),
-            price_lookup,
-            calendar,
-            n_slots=slots,
+            signals, price_lookup, calendar, n_slots=slots
         )
         path_returns.append(float(result.total_return))
 
@@ -266,6 +304,12 @@ def main() -> None:
     parser.add_argument("--basis", default="market_cap")
     parser.add_argument("--slots", type=int, default=V.TOP_N)
     parser.add_argument("--edge-z", type=float, default=1.0)
+    parser.add_argument(
+        "--scheme",
+        choices=("slot", "E3"),
+        default="slot",
+        help="成交機制：slot = 既有槽位佇列；E3 = 每 horizon 日定期全換倉",
+    )
     parser.add_argument("--db", default=str(HISTORY_DB_PATH))
     args = parser.parse_args()
 
@@ -285,7 +329,9 @@ def main() -> None:
     print("CPCV 路徑分布診斷 — 估計量對切分方式有多敏感")
     print("=" * 76)
     print(f"標的池 {len(members)} 檔（{args.basis}）｜期間 {args.start} ~ {args.end}")
-    print(f"槽位 {args.slots}｜edge_z {args.edge_z}")
+    mechanism = {"slot": "槽位佇列", "E3": f"每 {args.horizons[0]} 日定期全換倉"}
+    print(f"槽位 {args.slots}｜edge_z {args.edge_z}｜成交機制 "
+          f"{mechanism.get(args.scheme, args.scheme)}")
     print()
 
     start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
@@ -325,8 +371,8 @@ def main() -> None:
             )
             try:
                 returns, failures = run_one_family(
-                    family.name, by_date, tiers, calendar, price_lookup,
-                    horizon, args.edge_z, args.slots,
+                    by_date, tiers, calendar, price_lookup,
+                    horizon, args.edge_z, args.slots, args.scheme,
                 )
             except CPCVError as exc:
                 print(f"{family.name}：無法切分：{exc}")

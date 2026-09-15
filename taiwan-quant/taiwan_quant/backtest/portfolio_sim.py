@@ -50,6 +50,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from taiwan_quant.ranking.tie_break import ordering_key
 from taiwan_quant.config.costs import DEFAULT, CostModel, Tier
 
 TRADING_DAYS_PER_YEAR = 252.0
@@ -243,8 +244,10 @@ def simulate_portfolio(
     for s in signals:
         by_date.setdefault(s.decision_date, []).append(s)
     for batch in by_date.values():
-        # 排名高的先進場；同分時用代號確保可重現（禁令 7、8）
-        batch.sort(key=lambda s: (-s.rank_score, s.stock_id))
+        # 排名高的先進場；同分時用確定性抖動（可重現，且不偏向低號碼）。
+        # 原本用 stock_id 排——實測只有 12 個相異 rank_score，第 3 名平均
+        # 有 3.8 檔同分，等於讓代號決定誰進場。見 ranking/tie_break.py
+        batch.sort(key=ordering_key)
 
     cash = 1.0
     open_positions: list[_OpenPosition] = []

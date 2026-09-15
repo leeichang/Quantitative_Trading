@@ -46,13 +46,26 @@ def test_relative_top_filters_each_date_independently() -> None:
 
 @pytest.mark.unit
 def test_relative_top_rounds_up_and_is_deterministic_on_ties() -> None:
-    """3 檔取前 10% 至少留 1 檔；同分時代號小者勝出。"""
+    """
+    3 檔取前 10% 至少留 1 檔；同分時的勝出者**固定但不依代號**。
+
+    原本這裡斷言「代號小者勝出」——那是把 bug 寫進規格。實測只有 12 個
+    相異 `rank_score`，用代號破平手等於讓股票代號決定選股，而台股代號
+    與上市年份、產業、規模都相關（見 `ranking/tie_break.py`）。
+
+    這裡要守的是**確定性**（同樣輸入永遠同樣輸出，禁令 7、8），
+    不是「照字母排」。
+    """
     day = pd.Timestamp("2023-01-02")
     signals = [_signal(day, sid, 1.0) for sid in ("C", "A", "B")]
 
     selected = filter_relative_top(signals, top_percent=10)
+    again = filter_relative_top(
+        [_signal(day, sid, 1.0) for sid in ("B", "C", "A")], top_percent=10
+    )
 
-    assert [s.stock_id for s in selected] == ["A"]
+    assert len(selected) == 1
+    assert [s.stock_id for s in selected] == [s.stock_id for s in again]
 
 
 @pytest.mark.unit

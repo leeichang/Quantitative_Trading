@@ -11,6 +11,7 @@ from dataclasses import dataclass, replace
 
 import pandas as pd
 
+from taiwan_quant.ranking.tie_break import ordering_key
 from taiwan_quant.backtest.portfolio_sim import PriceLookup, Signal
 
 
@@ -37,7 +38,7 @@ def filter_relative_top(
 
     selected: list[Signal] = []
     for day in sorted(by_date):
-        ranked = sorted(by_date[day], key=lambda item: (-item.rank_score, item.stock_id))
+        ranked = sorted(by_date[day], key=ordering_key)
         count = max(1, math.ceil(len(ranked) * top_percent / 100.0))
         selected.extend(ranked[:count])
     return selected
@@ -78,7 +79,7 @@ def select_periodic_rebalances(
         for index, position in enumerate(positions[:-1])
     }
     for day in sorted(by_date):
-        ranked = sorted(by_date[day], key=lambda item: (-item.rank_score, item.stock_id))
+        ranked = sorted(by_date[day], key=ordering_key)
         entry_day = execution[day]
         exit_day = next_execution[day]
         for signal in ranked[:top_n]:
