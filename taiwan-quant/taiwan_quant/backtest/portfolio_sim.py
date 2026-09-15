@@ -50,8 +50,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from taiwan_quant.ranking.tie_break import ordering_key
 from taiwan_quant.config.costs import DEFAULT, CostModel, Tier
+from taiwan_quant.ranking.tie_break import ordering_key
 
 TRADING_DAYS_PER_YEAR = 252.0
 
@@ -81,6 +81,9 @@ class Signal:
     entry_price: float | None = None
     """已知成交價；E3 用 T+1 開盤價。None 時由 price_lookup 取得。"""
 
+    tie_count: int = 1
+    """選股當下與此訊號 ``rank_score`` 完全相同的候選檔數。"""
+
     def __post_init__(self) -> None:
         if self.exit_date < self.decision_date:
             raise ValueError(
@@ -92,6 +95,8 @@ class Signal:
             not math.isfinite(self.entry_price) or self.entry_price <= 0
         ):
             raise ValueError(f"entry_price 必須為正有限值，得到 {self.entry_price}")
+        if self.tie_count < 1:
+            raise ValueError(f"tie_count 必須為正，得到 {self.tie_count}")
 
 
 @dataclass(frozen=True)
@@ -106,6 +111,8 @@ class ClosedTrade:
 
     gross_return: float
     cost_rate: float
+    rank_score: float
+    tie_count: int
 
     @property
     def net_return(self) -> float:
@@ -178,6 +185,8 @@ class _OpenPosition:
     entry_price: float
     gross_return: float
     cost_rate: float
+    rank_score: float
+    tie_count: int
 
 
 def _annualize(cumulative: float, n_days: int) -> float:
@@ -273,6 +282,8 @@ def simulate_portfolio(
                     allocation=p.allocation,
                     gross_return=p.gross_return,
                     cost_rate=p.cost_rate,
+                    rank_score=p.rank_score,
+                    tie_count=p.tie_count,
                 ))
             else:
                 still_open.append(p)
@@ -317,6 +328,8 @@ def simulate_portfolio(
                 entry_price=entry_price,
                 gross_return=s.gross_return,
                 cost_rate=cost_rate,
+                rank_score=s.rank_score,
+                tie_count=s.tie_count,
             ))
 
         # ── 3. 逐日標記市值 ──

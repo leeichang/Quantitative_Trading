@@ -50,6 +50,7 @@ from taiwan_quant.validation.benchmarks import (  # noqa: E402
     etf_benchmark_curves,
 )
 from taiwan_quant.validation.thresholds import (  # noqa: E402
+    annotate_tie_counts,
     filter_relative_top,
     select_periodic_rebalances,
 )
@@ -84,7 +85,7 @@ def _scheme_signals(
     if name == "E3-rebalance60":
         result = select_periodic_rebalances(raw, calendar, execution_lookup, 60, 3)
         return list(result.signals), result.candidates, result.rejected_missing_price
-    return raw, len(raw), 0
+    return annotate_tie_counts(raw), len(raw), 0
 
 
 def main() -> None:
@@ -218,6 +219,16 @@ def main() -> None:
                     "weekly_turnover": result.weekly_turnover,
                     "annualized_cost_drag": result.annualized_cost_drag,
                     "cost_model": "taiwan_quant.config.costs.DEFAULT",
+                    "transactions": [
+                        {
+                            "stock_id": trade.stock_id,
+                            "entry_date": trade.entry_date.date().isoformat(),
+                            "exit_date": trade.exit_date.date().isoformat(),
+                            "rank_score": trade.rank_score,
+                            "tie_count": trade.tie_count,
+                        }
+                        for trade in result.trades
+                    ],
                     "benchmarks": {
                         "equal_weight_150": {
                             "total_return": equal_stats.total_return,

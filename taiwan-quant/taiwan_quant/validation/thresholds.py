@@ -11,8 +11,8 @@ from dataclasses import dataclass, replace
 
 import pandas as pd
 
-from taiwan_quant.ranking.tie_break import ordering_key
 from taiwan_quant.backtest.portfolio_sim import PriceLookup, Signal
+from taiwan_quant.ranking.tie_break import ordering_key
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,21 @@ class PeriodicSelectionResult:
     signals: tuple[Signal, ...]
     candidates: int
     rejected_missing_price: int
+
+
+def annotate_tie_counts(signals: list[Signal]) -> list[Signal]:
+    """依決策日與排名分數標註完整同分群大小，不改寫傳入物件。"""
+    counts: dict[tuple[pd.Timestamp, float], int] = {}
+    for signal in signals:
+        key = (signal.decision_date, signal.rank_score)
+        counts[key] = counts.get(key, 0) + 1
+    return [
+        replace(
+            signal,
+            tie_count=counts[(signal.decision_date, signal.rank_score)],
+        )
+        for signal in signals
+    ]
 
 
 def filter_relative_top(
@@ -38,7 +53,7 @@ def filter_relative_top(
 
     selected: list[Signal] = []
     for day in sorted(by_date):
-        ranked = sorted(by_date[day], key=ordering_key)
+        ranked = sorted(annotate_tie_counts(by_date[day]), key=ordering_key)
         count = max(1, math.ceil(len(ranked) * top_percent / 100.0))
         selected.extend(ranked[:count])
     return selected
@@ -79,7 +94,7 @@ def select_periodic_rebalances(
         for index, position in enumerate(positions[:-1])
     }
     for day in sorted(by_date):
-        ranked = sorted(by_date[day], key=ordering_key)
+        ranked = sorted(annotate_tie_counts(by_date[day]), key=ordering_key)
         entry_day = execution[day]
         exit_day = next_execution[day]
         for signal in ranked[:top_n]:
