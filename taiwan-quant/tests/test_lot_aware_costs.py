@@ -129,8 +129,37 @@ def test_resolve_tier_picks_whole_lot_when_affordable() -> None:
     部位 132,000 元（40萬 × 33%）→ 買得起整張 → 整股分層
     部位  40,000 元（40萬 / 10 檔）→ 買不起 → 零股分層
     """
-    assert resolve_tier(price=100.0, amount=132_000) is Tier.LARGE_WHOLE
-    assert resolve_tier(price=100.0, amount=40_000) is Tier.LARGE
+    assert resolve_tier(
+        actual_price=100.0, adjusted_price=80.0, amount=132_000
+    ) is Tier.LARGE_WHOLE
+    assert resolve_tier(
+        actual_price=100.0, adjusted_price=80.0, amount=40_000
+    ) is Tier.LARGE
+
+
+@pytest.mark.unit
+def test_resolve_tier_uses_actual_not_adjusted_price_for_affordability() -> None:
+    """
+    工作單 J 的手算案例：實際價 42 元，一張需 42,000；40,000 買不起。
+
+    還原價 38 元若被誤用會判成買得起整張，因此結果必須是零股分層。
+    """
+    assert resolve_tier(
+        actual_price=42.0,
+        adjusted_price=38.0,
+        amount=40_000,
+    ) is Tier.LARGE
+
+
+@pytest.mark.unit
+def test_resolve_tier_rejects_missing_actual_price() -> None:
+    """缺實際價不可靜默退回還原價。"""
+    with pytest.raises(ValueError, match="actual_price"):
+        resolve_tier(
+            actual_price=None,
+            adjusted_price=38.0,
+            amount=40_000,
+        )
 
 
 @pytest.mark.unit
@@ -141,15 +170,23 @@ def test_resolve_tier_boundary_is_exactly_one_lot() -> None:
     部位剛好 40,000 → 買得起整張（含）
     部位 39,999 → 買不起
     """
-    assert resolve_tier(price=40.0, amount=40_000) is Tier.LARGE_WHOLE
-    assert resolve_tier(price=40.0, amount=39_999) is Tier.LARGE
+    assert resolve_tier(
+        actual_price=40.0, adjusted_price=35.0, amount=40_000
+    ) is Tier.LARGE_WHOLE
+    assert resolve_tier(
+        actual_price=40.0, adjusted_price=35.0, amount=39_999
+    ) is Tier.LARGE
 
 
 @pytest.mark.unit
 def test_resolve_tier_honours_the_mid_tier_request() -> None:
     """中型股的零股滑價是 0.4%，不可誤用 0.3%"""
-    assert resolve_tier(price=100.0, amount=40_000, large=False) is Tier.MID
-    assert resolve_tier(price=100.0, amount=132_000, large=False) is Tier.MID_WHOLE
+    assert resolve_tier(
+        actual_price=100.0, adjusted_price=80.0, amount=40_000, large=False
+    ) is Tier.MID
+    assert resolve_tier(
+        actual_price=100.0, adjusted_price=80.0, amount=132_000, large=False
+    ) is Tier.MID_WHOLE
 
 
 @pytest.mark.unit
@@ -160,17 +197,23 @@ def test_resolve_tier_routes_etfs_separately() -> None:
     部位 40,000 → ETF 零股
     部位 132,000 → ETF 整股
     """
-    assert resolve_tier(price=107.70, amount=40_000, is_etf=True) is Tier.ETF_ODD
-    assert resolve_tier(price=107.70, amount=132_000, is_etf=True) is Tier.ETF_WHOLE
+    assert resolve_tier(
+        actual_price=107.70, adjusted_price=100.0,
+        amount=40_000, is_etf=True,
+    ) is Tier.ETF_ODD
+    assert resolve_tier(
+        actual_price=107.70, adjusted_price=100.0,
+        amount=132_000, is_etf=True,
+    ) is Tier.ETF_WHOLE
 
 
 @pytest.mark.unit
 def test_resolve_tier_rejects_invalid_inputs() -> None:
     """系統邊界要驗證輸入，不可靜默回一個分層"""
     with pytest.raises(ValueError, match="必須為正"):
-        resolve_tier(price=0.0, amount=40_000)
+        resolve_tier(actual_price=0.0, adjusted_price=1.0, amount=40_000)
     with pytest.raises(ValueError, match="必須為正"):
-        resolve_tier(price=100.0, amount=0)
+        resolve_tier(actual_price=100.0, adjusted_price=80.0, amount=0)
 
 
 # ══════════════════════════════════════════════════════════════

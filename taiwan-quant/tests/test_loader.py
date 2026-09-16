@@ -27,6 +27,7 @@ from taiwan_quant.data.loader import (
     _apply_adjustment,
     coverage_report,
     load_chips,
+    load_price_views,
     load_prices,
     load_universe,
     price_quality_report,
@@ -300,6 +301,17 @@ def test_unadjusted_mode_returns_raw_prices(fake_db: Path) -> None:
     row = px.loc[("2330", pd.Timestamp("2026-01-06"))]
     assert row["close"] == pytest.approx(100.0), "未還原模式不應套用因子"
     assert "is_adjusted" not in px.columns
+
+
+@pytest.mark.unit
+def test_price_views_keep_adjusted_and_actual_prices_separate(fake_db: Path) -> None:
+    """同一日還原價 200、實際價 100，必須存在不同 DataFrame，不能混欄。"""
+    views = load_price_views(["2330"], db_path=fake_db)
+    key = ("2330", pd.Timestamp("2026-01-06"))
+
+    assert views.adjusted.loc[key, "close"] == pytest.approx(200.0)
+    assert views.actual.loc[key, "close"] == pytest.approx(100.0)
+    assert views.adjusted is not views.actual
 
 
 @pytest.mark.unit
