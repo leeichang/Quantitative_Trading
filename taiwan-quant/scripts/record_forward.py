@@ -51,6 +51,8 @@ import argparse
 import json
 import sqlite3
 import sys
+from collections import Counter
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -81,6 +83,23 @@ from taiwan_quant.forward_predictions import (  # noqa: E402
     record_forward_predictions,
     settle_forward_prediction,
 )
+from taiwan_quant.ranking.constraints import (  # noqa: E402
+    DEFENSIVE_BETA_MAX,
+    HIGH_VOLATILITY_PERCENTILE,
+    ConstraintLimits,
+    greedy_pick,
+    promote_defensive,
+)
+from taiwan_quant.ranking.portfolio_features import (  # noqa: E402
+    BETA_BENCHMARK,
+    UNCLASSIFIED,
+    RankedCandidate,
+    atr_percentiles,
+    betas,
+    build_candidates,
+    load_industries,
+    return_correlations,
+)
 from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
@@ -108,9 +127,7 @@ ETF 暫不納入候選。
 兩者會在帳本裡並存、在同一段未來上被比較——那才是帳本的價值。
 """
 
-STRATEGY_VERSION = "momentum_top10_h40@v1"
-
-PARAMS = {
+BASE_PARAMS = {
     "family": FAMILY,
     "holding_days": HOLDING_DAYS,
     "n_positions": N_POSITIONS,
@@ -126,7 +143,81 @@ PARAMS = {
     "entry": "T+1 open",
     "exit": f"T+{HOLDING_DAYS} close",
 }
-PARAMS_JSON = json.dumps(PARAMS, ensure_ascii=False, sort_keys=True)
+
+CLAUDE_MD_LIMITS = ConstraintLimits(
+    top_n=N_POSITIONS,
+    max_same_industry=2,
+    max_high_volatility=1,
+    max_correlation=0.7,
+    require_defensive=True,
+)
+"""
+CLAUDE.md「投組約束」的四條，數字**原封不動**套到 N=10。
+
+開發集實測（`reports/constraint_cost_dev.json`，36 期）：約束的代價
+點估計是 −1.75 pp/趟，但配對標準誤 1.58 pp、**t = −1.11**。檢定力只夠
+偵測「約束把整個優勢全部消滅」（2 SE = 3.16 pp vs 優勢 3.28 pp），
+再小的代價都看不見。
+
+**沒有證據支持放寬，所以不放寬。** 看過結果之後把 2 改成 3 會是
+「用回測結果放寬風控規格」，那正是禁令 6 要防的事。
+"""
+
+
+@dataclass(frozen=True)
+class Variant:
+    """
+    帳本裡並存的一個版本。
+
+    ## 為什麼要兩版並存，而不是直接換掉 v1
+
+    帳本不可改寫（`forward_predictions` 的設計理由）。而且兩版在**同一段
+    未來**上被比較，比在舊區間上重跑可信得多——那正是帳本存在的價值。
+
+    `momentum_top10_h40@v1` 因此留著當對照組：它的第一筆紀錄
+    （2026-09-11）有 6 檔金融保險，明顯違反「同產業 ≤ 2」，**不可推播**，
+    但它是量測約束真實代價的唯一乾淨基準。
+    """
+
+    strategy_version: str
+    limits: ConstraintLimits | None
+    """`None` 代表純排名、無投組約束"""
+
+    note: str
+
+    @property
+    def params_json(self) -> str:
+        """禁令 8：約束設定也是回測參數，必須存下來"""
+        params = dict(BASE_PARAMS)
+        params["note"] = self.note
+        if self.limits is None:
+            params["portfolio_constraints"] = None
+        else:
+            params["portfolio_constraints"] = {
+                "max_same_industry": self.limits.max_same_industry,
+                "max_high_volatility": self.limits.max_high_volatility,
+                "max_correlation": self.limits.max_correlation,
+                "require_defensive": self.limits.require_defensive,
+                "high_volatility_percentile": HIGH_VOLATILITY_PERCENTILE,
+                "defensive_beta_max": DEFENSIVE_BETA_MAX,
+                "beta_benchmark": BETA_BENCHMARK,
+                "industry_source": "stock_master.industry（現行分類，非時點）",
+            }
+        return json.dumps(params, ensure_ascii=False, sort_keys=True)
+
+
+VARIANTS: tuple[Variant, ...] = (
+    Variant(
+        strategy_version="momentum_top10_h40@v1",
+        limits=None,
+        note="純分數排名，無投組約束。對照組，不可推播（實測會選出 6 檔同產業）",
+    ),
+    Variant(
+        strategy_version="momentum_top10_h40_c@v1",
+        limits=CLAUDE_MD_LIMITS,
+        note="CLAUDE.md 投組約束原規格套到 N=10。這一版才是可推播的",
+    ),
+)
 
 
 def latest_price_date(db_path: Path) -> date:
@@ -192,7 +283,19 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
         ranked.index,
         key=lambda sid: (-float(ranked[sid]),
                          deterministic_jitter(sid, DEFAULT_TIE_SEED)),
-    )[:N_POSITIONS]
+    )
+
+    closes = pd.DataFrame(
+        {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
+    ).reindex(calendar)
+    candidates = build_candidates(
+        ordered=ordered,
+        scores={sid: float(ranked[sid]) for sid in ordered},
+        industries=load_industries(db_path),
+        atr_pct=atr_percentiles(by_stock, day, tuple(ordered)),
+        beta_map=betas(closes, day, tuple(ordered)),
+    )
+    correlations = return_correlations(closes, day, tuple(ordered))
 
     trading_calendar = load_trading_calendar(db_path)
     due = due_trading_date(trading_calendar, day.date(), HOLDING_DAYS)
@@ -200,22 +303,60 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
     amount = CAPITAL / N_POSITIONS
 
     output: list[ForwardPrediction] = []
-    for rank, sid in enumerate(ordered, start=1):
-        close = float(by_stock[sid]["close"].loc[day])
-        tier = resolve_tier(price=close, amount=amount, is_etf=is_etf(sid))
-        output.append(ForwardPrediction(
-            predicted_at=predicted_at,
-            data_asof=str(day.date()),
-            strategy_version=STRATEGY_VERSION,
-            params_json=PARAMS_JSON,
-            stock_id=sid,
-            rank=rank,
-            score=float(ranked[sid]),
-            entry_price=close,
-            due_date=due.isoformat(),
-            round_trip_cost=DEFAULT_COST.round_trip_rate(tier),
-        ))
+    for variant in VARIANTS:
+        picks = select(candidates, correlations, variant.limits)
+        if not picks:
+            raise RuntimeError(
+                f"{variant.strategy_version} 在 {day.date()} 選不出任何標的"
+            )
+        for rank, sid in enumerate(picks, start=1):
+            close = float(by_stock[sid]["close"].loc[day])
+            tier = resolve_tier(price=close, amount=amount, is_etf=is_etf(sid))
+            output.append(ForwardPrediction(
+                predicted_at=predicted_at,
+                data_asof=str(day.date()),
+                strategy_version=variant.strategy_version,
+                params_json=variant.params_json,
+                stock_id=sid,
+                rank=rank,
+                score=float(ranked[sid]),
+                entry_price=close,
+                due_date=due.isoformat(),
+                round_trip_cost=DEFAULT_COST.round_trip_rate(tier),
+            ))
     return output
+
+
+def select(
+    candidates: list[RankedCandidate],
+    correlations: dict[tuple[str, str], float],
+    limits: ConstraintLimits | None,
+) -> list[str]:
+    """
+    套用投組約束後的持股清單。
+
+    Args:
+        candidates: 已依分數排序的候選（順序即優先序）
+        correlations: 兩兩相關係數
+        limits: `None` 代表無約束，直接取前 `N_POSITIONS` 檔
+
+    Returns:
+        `stock_id` 清單，最多 `N_POSITIONS` 檔。**可能少於 N**——
+        約束擋太多時寧可少推幾檔，湊滿不是目標。
+
+    `promote_defensive` 換不成時保留原組合並非放過約束：實測 N=10 的
+    前 10 檔中位已有 8 檔 beta < 1.0，這條約束在 N=10 幾乎不會綁到。
+    真正的問題是它太鬆（見文件），不是它會擋掉標的。
+    """
+    if limits is None:
+        return [c.stock_id for c in candidates[:N_POSITIONS]]
+
+    picked, _ = greedy_pick(candidates, correlations, limits)
+    if limits.require_defensive:
+        promoted = promote_defensive(picked, candidates, correlations, limits)
+        if promoted is not None:
+            picked = promoted
+    return [c.stock_id for c in picked]
 
 
 def settle(db_path: Path) -> tuple[int, int]:
@@ -290,20 +431,37 @@ def main() -> None:
     as_of = date.fromisoformat(args.as_of) if args.as_of else latest_price_date(args.db)
     predictions = generate(args.db, as_of)
 
-    print(f"版本 {STRATEGY_VERSION}｜資料截止 {predictions[0].data_asof}"
-          f"｜揭曉日 {predictions[0].due_date}")
+    industries = load_industries(args.db)
+    print(f"資料截止 {predictions[0].data_asof}｜揭曉日 {predictions[0].due_date}")
     print(f"每檔 {CAPITAL / N_POSITIONS:,.0f} 元｜{FAMILY}｜持有 {HOLDING_DAYS} 日")
-    print()
-    print(f"{'排名':>4}{'代號':>8}{'分數':>9}{'決策日收盤':>12}"
-          f"{'成本分層':>12}{'來回成本':>10}")
-    print("-" * 58)
-    for p in predictions:
-        tier = resolve_tier(price=p.entry_price, amount=CAPITAL / N_POSITIONS,
-                            is_etf=is_etf(p.stock_id))
-        print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
-              f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%")
-    print("-" * 58)
-    print(f"平均來回成本 {np.mean([p.round_trip_cost for p in predictions])*100:.3f}%")
+
+    for variant in VARIANTS:
+        rows = [p for p in predictions if p.strategy_version == variant.strategy_version]
+        if not rows:
+            continue
+        print()
+        print(f"── {variant.strategy_version} " + "─" * max(0, 44 - len(variant.strategy_version)))
+        print(f"   {variant.note}")
+        print(f"{'排名':>4}{'代號':>8}{'分數':>9}{'決策日收盤':>12}"
+              f"{'成本分層':>12}{'來回成本':>10}  產業")
+        print("-" * 70)
+        for p in rows:
+            tier = resolve_tier(price=p.entry_price, amount=CAPITAL / N_POSITIONS,
+                                is_etf=is_etf(p.stock_id))
+            print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
+                  f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%  "
+                  f"{industries.get(p.stock_id, UNCLASSIFIED)}")
+        print("-" * 70)
+        counts = Counter(industries.get(p.stock_id, UNCLASSIFIED) for p in rows)
+        worst_industry, worst_count = counts.most_common(1)[0]
+        print(f"{len(rows)} 檔｜平均來回成本 "
+              f"{np.mean([p.round_trip_cost for p in rows])*100:.3f}%"
+              f"｜最集中產業 {worst_industry} {worst_count} 檔")
+        if variant.limits is not None and worst_count > variant.limits.max_same_industry:
+            raise RuntimeError(
+                f"{variant.strategy_version} 的 {worst_industry} 有 {worst_count} 檔，"
+                f"超過上限 {variant.limits.max_same_industry}——約束沒有生效，不可寫入"
+            )
     print()
     if args.dry_run:
         print("--dry-run：未寫入帳本")
