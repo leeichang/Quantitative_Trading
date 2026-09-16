@@ -5,12 +5,12 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 
 import pandas as pd
 
 
-class MissingPriceKind(str, Enum):
+class MissingPriceKind(StrEnum):
     """持有期終點價格狀態。"""
 
     COMPLETE = "complete"
@@ -63,7 +63,10 @@ def settle_holding_period(
         )
 
     eligible = bars.loc[(bars.index >= entry_date) & (bars.index < target_date)]
-    if delisted_date is not None and not eligible.empty:
+    delisting_known_by_target = (
+        delisted_date is not None and delisted_date <= target_date.date()
+    )
+    if delisting_known_by_target and not eligible.empty:
         valid = eligible["close"].astype(float)
         valid = valid[valid.map(lambda value: math.isfinite(value) and value > 0)]
         if not valid.empty:
