@@ -62,7 +62,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     load_chips,
-    load_prices,
+    load_price_views,
 )
 from taiwan_quant.ranking.constraints import (  # noqa: E402
     ConstraintLimits,
@@ -145,6 +145,7 @@ def evaluate(
     scores: dict[str, dict],
     members_at: dict,
     opens: pd.DataFrame,
+    actual_opens: pd.DataFrame,
     closes: pd.DataFrame,
     forward: pd.DataFrame,
     atr_ratios: pd.DataFrame,
@@ -204,18 +205,24 @@ def evaluate(
 
         # 兩種資金配置的成本不同：固定 1/N 每檔只有 4 萬（多走零股），
         # 等權攤到 k 檔時每檔 400,000/k 更多（更容易買得起整張）。
-        def mean_cost(amount: float) -> float:
+        def mean_cost(
+            amount: float,
+            *,
+            picked_ids: tuple[str, ...] = tuple(ids),
+            trade_day: pd.Timestamp = entry_day,
+        ) -> float:
             return float(
                 np.mean(
                     [
                         DEFAULT_COST.round_trip_rate(
                             resolve_tier(
-                                price=float(opens.loc[entry_day, sid]),
+                                actual_price=float(actual_opens.loc[trade_day, sid]),
+                                adjusted_price=float(opens.loc[trade_day, sid]),
                                 amount=amount,
                                 is_etf=is_etf(sid),
                             )
                         )
-                        for sid in ids
+                        for sid in picked_ids
                     ]
                 )
             )
@@ -283,11 +290,10 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
 
     # ETF 一律載入：0050 是 beta 的基準，缺它 betas() 會拋錯
     members = list(merge_etf_candidates(tuple(members), include=True))
-    prices = load_prices(
+    price_views = load_price_views(
         members,
         start=date(2015, 1, 1),
         end=end,
-        adjusted=True,
         db_path=db_path,
         unlock_frozen=unlock,
         frozen_reason=reason,
@@ -300,13 +306,16 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
         unlock_frozen=unlock,
         frozen_reason=reason,
     )
-    by_stock = build_dataset(members, prices, chips).by_stock
+    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     scores = V.precompute_scores(by_stock)[FAMILY]
     opens = pd.DataFrame(
         {sid: bars["open"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
+    actual_opens = (
+        price_views.actual["open"].unstack("stock_id").reindex(calendar)
+    )
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
@@ -333,6 +342,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
             scores,
             members_at,
             opens,
+            actual_opens,
             closes,
             forward,
             atr_ratios,

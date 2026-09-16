@@ -75,6 +75,7 @@ from taiwan_quant.data.loader import (  # noqa: E402
     FROZEN_DATA_START,
     HISTORY_DB_PATH,
     load_chips,
+    load_price_views,
     load_prices,
 )
 from taiwan_quant.forward_predictions import (  # noqa: E402
@@ -256,11 +257,13 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
 
     unlock = as_of >= FROZEN_DATA_START
     reason = "record_forward 產生前推預測" if unlock else None
-    prices = load_prices(members, start=date(2015, 1, 1), end=as_of, adjusted=True,
-                         db_path=db_path, unlock_frozen=unlock, frozen_reason=reason)
+    price_views = load_price_views(
+        members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
+        unlock_frozen=unlock, frozen_reason=reason,
+    )
     chips = load_chips(members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, prices, chips).by_stock
+    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     day = calendar[-1]
@@ -311,7 +314,13 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
             )
         for rank, sid in enumerate(picks, start=1):
             close = float(by_stock[sid]["close"].loc[day])
-            tier = resolve_tier(price=close, amount=amount, is_etf=is_etf(sid))
+            actual_close = float(price_views.actual.loc[(sid, day), "close"])
+            tier = resolve_tier(
+                actual_price=actual_close,
+                adjusted_price=close,
+                amount=amount,
+                is_etf=is_etf(sid),
+            )
             output.append(ForwardPrediction(
                 predicted_at=predicted_at,
                 data_asof=str(day.date()),
@@ -446,7 +455,10 @@ def main() -> None:
               f"{'成本分層':>12}{'來回成本':>10}  產業")
         print("-" * 70)
         for p in rows:
-            tier = resolve_tier(price=p.entry_price, amount=CAPITAL / N_POSITIONS,
+            tier = resolve_tier(
+                                actual_price=p.entry_price,
+                                adjusted_price=p.entry_price,
+                                amount=CAPITAL / N_POSITIONS,
                                 is_etf=is_etf(p.stock_id))
             print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
                   f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%  "

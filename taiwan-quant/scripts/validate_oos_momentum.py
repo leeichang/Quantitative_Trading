@@ -66,7 +66,7 @@ from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     load_chips,
-    load_prices,
+    load_price_views,
 )
 from taiwan_quant.validation.benchmarks import (  # noqa: E402
     equity_curve_statistics,
@@ -144,15 +144,22 @@ def run(db_path: Path, unlock: bool, reason: str | None,
 
     # 從 2015 載入是為了讓 T 日的分數有足夠歷史；分數只用 T 日及之前的資料
     # （物理截斷測試已驗證無 look-ahead），決策日則嚴格限制在 OOS 區間內。
-    prices = load_prices(members, start=date(2015, 1, 1), end=end, adjusted=True,
-                         db_path=db_path, unlock_frozen=unlock, frozen_reason=reason)
+    price_views = load_price_views(
+        members, start=date(2015, 1, 1), end=end, db_path=db_path,
+        unlock_frozen=unlock, frozen_reason=reason,
+    )
     chips = load_chips(members, start=date(2015, 1, 1), end=end, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, prices, chips).by_stock
+    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
+    actual_by_stock = {
+        sid: price_views.actual.xs(sid, level="stock_id")
+        for sid in members if sid in price_views.actual.index.get_level_values("stock_id")
+    }
 
     calendar = V.trading_calendar(by_stock)
     scores = V.precompute_scores(by_stock)[FAMILY]
     opens = build_frame(by_stock, "open", calendar)
+    actual_opens = build_frame(actual_by_stock, "open", calendar)
     closes = build_frame(by_stock, "close", calendar)
 
     oos_ts = pd.Timestamp(OOS_START)
@@ -190,8 +197,12 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         entry_day = calendar[calendar.index(day) + 1]
         per_name_cost = []
         for sid in picks:
-            price = float(opens.loc[entry_day, sid])
-            tier = resolve_tier(price=price, amount=CAPITAL / N_POSITIONS,
+            adjusted_price = float(opens.loc[entry_day, sid])
+            actual_price = float(actual_opens.loc[entry_day, sid])
+            tier = resolve_tier(
+                                actual_price=actual_price,
+                                adjusted_price=adjusted_price,
+                                amount=CAPITAL / N_POSITIONS,
                                 is_etf=is_etf(sid))
             per_name_cost.append(DEFAULT_COST.round_trip_rate(tier))
         cost = float(np.mean(per_name_cost))
@@ -200,13 +211,18 @@ def run(db_path: Path, unlock: bool, reason: str | None,
                            "gross": gross, "cost": cost, "net": gross - cost,
                            "n_candidates": int(len(common))})
         for sid, c in zip(picks, per_name_cost, strict=True):
-            price = float(opens.loc[entry_day, sid])
+            adjusted_price = float(opens.loc[entry_day, sid])
+            actual_price = float(actual_opens.loc[entry_day, sid])
             trades.append({"decision_date": str(day.date()), "stock_id": sid,
                            "score": float(ranked[sid]),
                            "gross_return": float(realized[sid]),
-                           "entry_price": price, "round_trip_cost": c,
+                           "entry_price": adjusted_price,
+                           "actual_entry_price": actual_price,
+                           "round_trip_cost": c,
                            "tier": resolve_tier(
-                               price=price, amount=CAPITAL / N_POSITIONS,
+                               actual_price=actual_price,
+                               adjusted_price=adjusted_price,
+                               amount=CAPITAL / N_POSITIONS,
                                is_etf=is_etf(sid)).value,
                            "is_etf": is_etf(sid)})
 

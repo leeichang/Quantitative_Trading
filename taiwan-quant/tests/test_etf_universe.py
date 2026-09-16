@@ -147,10 +147,10 @@ def test_etf_positions_route_to_the_etf_cost_tier() -> None:
     **不可誤用 `Tier.LARGE`（0.3%）**——那是 0050「成分股」的零股滑價，
     不是 0050 本身。ETF 的跳動單位細 10 倍，用 0.3% 會高估三倍。
     """
-    assert resolve_tier(price=107.70, amount=40_000,
+    assert resolve_tier(actual_price=107.70, adjusted_price=100.0, amount=40_000,
                         is_etf=is_etf("0050")) is Tier.ETF_ODD
-    assert resolve_tier(price=107.70, amount=133_333,
+    assert resolve_tier(actual_price=107.70, adjusted_price=100.0, amount=133_333,
                         is_etf=is_etf("0050")) is Tier.ETF_WHOLE
     # 個股走原本的分層
-    assert resolve_tier(price=107.70, amount=40_000,
+    assert resolve_tier(actual_price=107.70, adjusted_price=100.0, amount=40_000,
                         is_etf=is_etf("2330")) is Tier.LARGE
