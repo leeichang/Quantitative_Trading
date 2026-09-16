@@ -74,6 +74,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.loader import (  # noqa: E402
     FROZEN_DATA_START,
     HISTORY_DB_PATH,
+    RAW_CLOSE_COLUMN,
     load_chips,
     load_prices,
 )
@@ -310,8 +311,21 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 f"{variant.strategy_version} 在 {day.date()} 選不出任何標的"
             )
         for rank, sid in enumerate(picks, start=1):
-            close = float(by_stock[sid]["close"].loc[day])
-            tier = resolve_tier(price=close, amount=amount, is_etf=is_etf(sid))
+            bars = by_stock[sid]
+            tradeable = float(bars[RAW_CLOSE_COLUMN].loc[day])
+            adjusted = float(bars["close"].loc[day])
+
+            # 決策日當天兩價通常相同（還原錨在載入範圍的最後一天），但
+            # 那是巧合不是保證：換一個 end、或錨定日之後有除權息，就會
+            # 分開。差太多時寧可停下來，不要靜默用錯的價格算成本分層。
+            if adjusted > 0 and abs(tradeable / adjusted - 1) > 0.01:
+                raise RuntimeError(
+                    f"{sid} 在 {day.date()} 的實際價 {tradeable:.2f} 與還原價 "
+                    f"{adjusted:.2f} 差 {abs(tradeable/adjusted-1):.1%}；"
+                    "決策日不該有這個落差，請先確認還原價的錨定日"
+                )
+
+            tier = resolve_tier(price=tradeable, amount=amount, is_etf=is_etf(sid))
             output.append(ForwardPrediction(
                 predicted_at=predicted_at,
                 data_asof=str(day.date()),
@@ -320,7 +334,10 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 stock_id=sid,
                 rank=rank,
                 score=float(ranked[sid]),
-                entry_price=close,
+                # 實際價，不是還原價——這是使用者拿去下單看的數字。
+                # 結算不用它（用真正的 T+1 開盤重算），所以它純粹是稽核
+                # 與可讀性用。
+                entry_price=tradeable,
                 due_date=due.isoformat(),
                 round_trip_cost=DEFAULT_COST.round_trip_rate(tier),
             ))

@@ -61,6 +61,7 @@ from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
+    RAW_OPEN_COLUMN,
     load_chips,
     load_prices,
 )
@@ -145,6 +146,7 @@ def evaluate(
     scores: dict[str, dict],
     members_at: dict,
     opens: pd.DataFrame,
+    raw_opens: pd.DataFrame,
     closes: pd.DataFrame,
     forward: pd.DataFrame,
     atr_ratios: pd.DataFrame,
@@ -210,7 +212,9 @@ def evaluate(
                     [
                         DEFAULT_COST.round_trip_rate(
                             resolve_tier(
-                                price=float(opens.loc[entry_day, sid]),
+                                # 可負擔性用實際價，不是還原價。還原錨在
+                                # 最新日，2016 年平均只有實際價的 86.7%
+                                price=float(raw_opens.loc[entry_day, sid]),
                                 amount=amount,
                                 is_etf=is_etf(sid),
                             )
@@ -307,6 +311,10 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     opens = pd.DataFrame(
         {sid: bars["open"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
+    # 實際 T+1 開盤價，只給 resolve_tier 判斷整股／零股
+    raw_opens = pd.DataFrame(
+        {sid: bars[RAW_OPEN_COLUMN].astype(float) for sid, bars in by_stock.items()}
+    ).reindex(calendar)
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
@@ -333,6 +341,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
             scores,
             members_at,
             opens,
+            raw_opens,
             closes,
             forward,
             atr_ratios,

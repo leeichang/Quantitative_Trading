@@ -65,6 +65,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
+    RAW_OPEN_COLUMN,
     load_chips,
     load_prices,
 )
@@ -154,6 +155,8 @@ def run(db_path: Path, unlock: bool, reason: str | None,
     scores = V.precompute_scores(by_stock)[FAMILY]
     opens = build_frame(by_stock, "open", calendar)
     closes = build_frame(by_stock, "close", calendar)
+    raw_opens = build_frame(by_stock, RAW_OPEN_COLUMN, calendar)
+    """實際 T+1 開盤價。只給 `resolve_tier` 判斷整股／零股，不進報酬計算"""
 
     oos_ts = pd.Timestamp(OOS_START)
     anchor = next(i for i, d in enumerate(calendar) if d >= oos_ts)
@@ -187,11 +190,16 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         # 成本逐檔決定（禁令 3：一律呼叫 config/costs.py）。
         # 第一版把 0.671% 寫死在腳本裡，那繞過了單一來源，而且無法反映
         # 「買不起整張就是零股」與「ETF 跳動單位細 10 倍」這兩件事。
+        #
+        # 第二版用還原價判斷「買不起整張」，那也是錯的：還原錨在最新日，
+        # 2016 年的還原價平均只有實際價的 86.7%，13.4% 的名字在 40 元
+        # 門檻上分層錯邊——方向是「看起來買得起整張」，即低估成本。
+        # 可負擔性一律用 raw_open（實際 T+1 開盤價），報酬仍用還原價。
         entry_day = calendar[calendar.index(day) + 1]
         per_name_cost = []
         for sid in picks:
-            price = float(opens.loc[entry_day, sid])
-            tier = resolve_tier(price=price, amount=CAPITAL / N_POSITIONS,
+            tier = resolve_tier(price=float(raw_opens.loc[entry_day, sid]),
+                                amount=CAPITAL / N_POSITIONS,
                                 is_etf=is_etf(sid))
             per_name_cost.append(DEFAULT_COST.round_trip_rate(tier))
         cost = float(np.mean(per_name_cost))
@@ -200,13 +208,17 @@ def run(db_path: Path, unlock: bool, reason: str | None,
                            "gross": gross, "cost": cost, "net": gross - cost,
                            "n_candidates": int(len(common))})
         for sid, c in zip(picks, per_name_cost, strict=True):
-            price = float(opens.loc[entry_day, sid])
+            tradeable = float(raw_opens.loc[entry_day, sid])
             trades.append({"decision_date": str(day.date()), "stock_id": sid,
                            "score": float(ranked[sid]),
                            "gross_return": float(realized[sid]),
-                           "entry_price": price, "round_trip_cost": c,
+                           # 兩個價格都存：報酬對得上還原價，成本分層
+                           # 對得上實際價，事後可各自稽核
+                           "entry_price_adjusted": float(opens.loc[entry_day, sid]),
+                           "entry_price_tradeable": tradeable,
+                           "round_trip_cost": c,
                            "tier": resolve_tier(
-                               price=price, amount=CAPITAL / N_POSITIONS,
+                               price=tradeable, amount=CAPITAL / N_POSITIONS,
                                is_etf=is_etf(sid)).value,
                            "is_etf": is_etf(sid)})
 

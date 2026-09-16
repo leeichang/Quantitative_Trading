@@ -37,6 +37,40 @@ DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "qlib-tw-trader" / "data
 
 PRICE_COLUMNS = ("open", "high", "low", "close", "volume")
 
+RAW_CLOSE_COLUMN = "raw_close"
+RAW_OPEN_COLUMN = "raw_open"
+"""
+未還原的實際成交價，**一律存在**（`adjusted=False` 時等於 `close` / `open`）。
+
+只保留 open 與 close 兩個，因為只有它們被用來做交易決策：
+
+    進場  T+1 開盤   →  raw_open
+    出場  T+H 收盤   →  raw_close
+
+high / low 只進 ATR 與柵欄寬度，那些都是**比例**運算，用還原價才對。
+
+## 為什麼要獨立一欄
+
+兩種價格回答不同的問題：
+
+    close      這一趟賺了多少      禁令 12 要求用還原價
+    raw_close  買不買得起整張      成本分層要用實際成交價
+
+`resolve_tier(price, amount)` 用 `amount >= price * LOT_SIZE` 判斷整股。
+N=10 時 amount = 40,000，門檻是股價 40 元。傳還原價進去會算錯：
+
+    年度   還原/實際平均   40 元門檻分層錯邊的比例
+    2016      0.8666          13.41%
+    2020      0.8715          10.89%
+    2024      0.9259           3.46%
+
+還原是回溯調整、錨在最新日，所以越早的日期還原價越低——**開發集
+正是落差最大的那一段**。而錯的方向是「看起來買得起整張」，也就是
+低估成本。
+
+⚠️ 一律存在是刻意的：呼叫端不需要 `if adjusted` 分支，少一個分支就少
+一個忘記處理的可能。"""
+
 FROZEN_DATA_START = date(2026, 9, 14)
 """
 凍結資料起點（含）。
@@ -401,6 +435,11 @@ def load_prices(
 
     df["date"] = pd.to_datetime(df["date"])
 
+    # 實際成交價要在 _apply_adjustment 覆寫 close 之前留下來。
+    # 之後再從還原價乘回因子還原不了——因子本身就是缺值補出來的。
+    df[RAW_CLOSE_COLUMN] = df["close"].astype("float64")
+    df[RAW_OPEN_COLUMN] = df["open"].astype("float64")
+
     if adjusted:
         df = _apply_adjustment(df)
 
@@ -558,7 +597,15 @@ def _apply_adjustment(df: pd.DataFrame) -> pd.DataFrame:
     註：SQLite 讀出的價格欄位可能是 int64，pandas 3.0 不允許把 float
     寫進 int64 欄位，因此先統一轉 float64 再運算。
     """
-    numeric = df.astype({col: "float64" for col in OHLC_COLUMNS})
+    # `adj_close` 也要轉。整檔都沒有還原價時它是全 NULL，SQLite 讀成
+    # object dtype，`np.isfinite` 會拋 TypeError——而這個函式的說明明寫
+    # 「整檔完全沒有還原價時保留原價」，所以那條路徑必須真的走得通。
+    # 目前資料庫 1,218 檔全部有還原價，所以這是潛在而非現行故障；
+    # 但還原價是 `adj_backfill_log` 那個獨立步驟補的，新上市股在補完前
+    # 就會踩到。
+    numeric = df.astype(
+        {col: "float64" for col in (*OHLC_COLUMNS, "adj_close")}
+    )
 
     raw_factor = numeric["adj_close"] / numeric["close"]
     usable = raw_factor.notna() & np.isfinite(raw_factor) & (raw_factor > 0)
