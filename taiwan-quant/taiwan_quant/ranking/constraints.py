@@ -56,6 +56,52 @@ HIGH_VOLATILITY_PERCENTILE = 0.80
 DEFENSIVE_BETA_MAX = 1.0
 """beta 低於此值視為 defensive"""
 
+
+@dataclass(frozen=True)
+class ConstraintLimits:
+    """
+    一組投組約束的上限。
+
+    ## 為什麼要參數化，而不是直接用上面的常數
+
+    CLAUDE.md 那四條寫在「投組約束（**Top 3**）」標題下。`最多 2 支同產業`
+    在 3 檔裡是允許 **67%** 集中度，套到 10 檔就變成 **20%**——同一個
+    數字，兩個完全不同的嚴格程度。
+
+    動能突破 N=10 選出來的本來就是齊漲的同族群名字，所以「2 還是要放寬」
+    是一個**有代價的決定**，而那個代價必須先量再定，不能兩邊都猜。
+    參數化是為了讓它可掃描。
+
+    ⚠️ `DEFAULT` 維持 CLAUDE.md 的原始數字。任何放寬都必須在文件裡
+    寫明依據，不可靜默改預設值。
+    """
+
+    top_n: int = TOP_N
+    max_same_industry: int = MAX_SAME_INDUSTRY
+    max_high_volatility: int = MAX_HIGH_VOLATILITY
+    max_correlation: float = MAX_CORRELATION
+    require_defensive: bool = True
+
+    def __post_init__(self) -> None:
+        if self.top_n < 1:
+            raise ValueError(f"top_n 至少為 1，得到 {self.top_n}")
+        if self.max_same_industry < 1:
+            raise ValueError(
+                f"max_same_industry 至少為 1，得到 {self.max_same_industry}"
+            )
+        if self.max_high_volatility < 0:
+            raise ValueError(
+                f"max_high_volatility 不可為負，得到 {self.max_high_volatility}"
+            )
+        if not 0 < self.max_correlation <= 1:
+            raise ValueError(
+                f"max_correlation 必須落在 (0, 1]，得到 {self.max_correlation}"
+            )
+
+
+DEFAULT_LIMITS = ConstraintLimits()
+"""CLAUDE.md 的原始規格（Top 3）。放寬必須明確傳入新的 `ConstraintLimits`"""
+
 # ── 部位規模（D4） ────────────────────────────────────────
 
 RISK_PER_TRADE = 0.01
@@ -121,24 +167,25 @@ def violates_constraints[T: PortfolioCandidate](
     candidate: T,
     picked: list[T],
     correlations: dict[tuple[str, str], float],
+    limits: ConstraintLimits = DEFAULT_LIMITS,
 ) -> Rejection | None:
     """檢查加入 candidate 是否違反投組約束；沒問題回 None"""
     same_industry = sum(1 for p in picked if p.industry == candidate.industry)
-    if same_industry >= MAX_SAME_INDUSTRY:
+    if same_industry >= limits.max_same_industry:
         return Rejection(
             candidate.stock_id,
             RejectReason.INDUSTRY_LIMIT,
             f"同產業（{candidate.industry}）已有 {same_industry} 檔，"
-            f"上限 {MAX_SAME_INDUSTRY}",
+            f"上限 {limits.max_same_industry}",
         )
 
     if candidate.is_high_volatility:
         high_vol = sum(1 for p in picked if p.is_high_volatility)
-        if high_vol >= MAX_HIGH_VOLATILITY:
+        if high_vol >= limits.max_high_volatility:
             return Rejection(
                 candidate.stock_id,
                 RejectReason.VOLATILITY_LIMIT,
-                f"高波動標的已有 {high_vol} 檔，上限 {MAX_HIGH_VOLATILITY}",
+                f"高波動標的已有 {high_vol} 檔，上限 {limits.max_high_volatility}",
             )
 
     for existing in picked:
@@ -150,11 +197,12 @@ def violates_constraints[T: PortfolioCandidate](
                 f"缺少與 {existing.stock_id} 的相關係數資料。"
                 "保守拒絕——當成 0 等於假設無關，可能讓高度相關的標的同時入選",
             )
-        if abs(rho) >= MAX_CORRELATION:
+        if abs(rho) >= limits.max_correlation:
             return Rejection(
                 candidate.stock_id,
                 RejectReason.CORRELATION_LIMIT,
-                f"與 {existing.stock_id} 相關係數 {rho:.2f} ≥ {MAX_CORRELATION}",
+                f"與 {existing.stock_id} 相關係數 {rho:.2f} ≥ "
+                f"{limits.max_correlation}",
             )
 
     return None
@@ -163,19 +211,24 @@ def violates_constraints[T: PortfolioCandidate](
 def greedy_pick[T: PortfolioCandidate](
     ordered: list[T],
     correlations: dict[tuple[str, str], float],
+    limits: ConstraintLimits = DEFAULT_LIMITS,
 ) -> tuple[list[T], list[Rejection]]:
     """依序貪婪挑選，記錄每筆剔除原因。`ordered` 須已依期望值排序"""
     picked: list[T] = []
     rejected: list[Rejection] = []
 
     for c in ordered:
-        if len(picked) >= TOP_N:
+        if len(picked) >= limits.top_n:
             rejected.append(
-                Rejection(c.stock_id, RejectReason.TOP_N_REACHED, f"已選滿 {TOP_N} 檔")
+                Rejection(
+                    c.stock_id,
+                    RejectReason.TOP_N_REACHED,
+                    f"已選滿 {limits.top_n} 檔",
+                )
             )
             continue
 
-        violation = violates_constraints(c, picked, correlations)
+        violation = violates_constraints(c, picked, correlations, limits)
         if violation is not None:
             rejected.append(violation)
             continue
@@ -189,6 +242,7 @@ def promote_defensive[T: PortfolioCandidate](
     picked: list[T],
     ordered: list[T],
     correlations: dict[tuple[str, str], float],
+    limits: ConstraintLimits = DEFAULT_LIMITS,
 ) -> list[T] | None:
     """
     嘗試把一檔 defensive 換進組合。
@@ -211,7 +265,9 @@ def promote_defensive[T: PortfolioCandidate](
     for drop_idx in range(len(picked) - 1, -1, -1):
         remaining = [c for i, c in enumerate(picked) if i != drop_idx]
         for defensive in defensive_pool:
-            if violates_constraints(defensive, remaining, correlations) is None:
+            if violates_constraints(
+                defensive, remaining, correlations, limits
+            ) is None:
                 return remaining + [defensive]
 
     return None
