@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.diagnose_position_costs import summarize_rows
+from scripts.diagnose_position_costs import resolve_pick_tier, summarize_rows
+from taiwan_quant.config.costs import Tier
 
 
 @pytest.mark.unit
@@ -40,3 +41,13 @@ def test_summarize_rows_matches_hand_calculation() -> None:
 def test_summarize_rows_rejects_empty_input() -> None:
     with pytest.raises(ValueError, match="不可為空"):
         summarize_rows([], trips_per_year=6.3)
+
+
+@pytest.mark.unit
+def test_position_cost_scan_routes_historical_mid_cap_to_mid_tier() -> None:
+    """同一價格下，決策日不在 top 50 的股票必須走 0051 零股 0.4%。"""
+    tier = resolve_pick_tier(
+        "9999", actual_price=100.0, adjusted_price=80.0,
+        amount=40_000, is_large=False,
+    )
+    assert tier is Tier.MID

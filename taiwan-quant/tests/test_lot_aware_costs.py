@@ -41,6 +41,8 @@ Tier.MID   = "0051"   中型100成分股、**零股**、0.4%
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from taiwan_quant.config.costs import (
@@ -159,6 +161,16 @@ def test_resolve_tier_rejects_missing_actual_price() -> None:
             adjusted_price=38.0,
             amount=40_000,
         )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("bad", [math.nan, math.inf, -math.inf])
+def test_resolve_tier_rejects_non_finite_prices(bad: float) -> None:
+    """NaN/inf 不得繞過正值檢查後靜默落入零股。"""
+    with pytest.raises(ValueError, match="actual_price"):
+        resolve_tier(actual_price=bad, adjusted_price=38.0, amount=40_000)
+    with pytest.raises(ValueError, match="adjusted_price"):
+        resolve_tier(actual_price=42.0, adjusted_price=bad, amount=40_000)
 
 
 @pytest.mark.unit
