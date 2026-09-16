@@ -276,12 +276,25 @@ def report_multiple_testing(
         return
     daily_sharpe = float(best.mean() / best.std(ddof=1))
     effective = max(2, len(best) // horizon)      # 重疊修正，見 docstring
-    dsr = deflated_sharpe_ratio(
-        observed_sharpe=daily_sharpe * np.sqrt(V.TRADING_DAYS_PER_YEAR),
-        n_trials=len(curves) * n_horizons,
-        trial_sharpe_std=0.5,
-        n_observations=effective,
-    )
+    try:
+        dsr = deflated_sharpe_ratio(
+            observed_sharpe=daily_sharpe * np.sqrt(V.TRADING_DAYS_PER_YEAR),
+            n_trials=len(curves) * n_horizons,
+            trial_sharpe_std=0.5,
+            n_observations=effective,
+        )
+    except ValueError as exc:
+        # 有效樣本不足時**不要**改用原始日數硬算——那正是上一版的 bug，
+        # 會讓 DSR 從 0.9741 灌水到 1.0000。算不出來就是算不出來，
+        # 而「算不出來」本身就是結論：樣本不足以做多重測試校正。
+        print(f"\n  DSR 無法計算：{exc}")
+        print(f"    有效樣本數 {effective}"
+              f"（{len(best)} 個交易日 ÷ {horizon} 日持有）")
+        print(f"    年化 Sharpe {daily_sharpe * np.sqrt(V.TRADING_DAYS_PER_YEAR):.4f}"
+              "（未校正，不可當結論）")
+        print("    → 持有期越長，有效樣本越少。這個持有期在開發集的長度下，")
+        print("      已經短到無法做多重測試校正。")
+        return
     print(f"\n  DSR（表現最好的 {best_name}）")
     print(f"    觀察到的年化 Sharpe   {dsr.observed_sharpe:.4f}")
     print(f"    運氣的期望最佳值       {dsr.expected_maximum_sharpe:.4f}")
