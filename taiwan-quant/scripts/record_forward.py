@@ -1,12 +1,56 @@
 #!/usr/bin/env python3
-"""產生不可回寫的前推預測，或結算已揭曉的移動停損報酬。"""
+"""
+前推預測記錄與結算（動能突破 N=10）
+
+## 為什麼這是唯一會收斂的證據
+
+開發集可以反覆看，所以它證明不了什麼。OOS 區間看一次就髒了
+（2024-01 ~ 2026-08 已經在 `momentum_top10_h40@oos-2026-09-16` 用掉）。
+
+**只有前推預測是往前長的**：時間走一天就多一天證據，而且從來沒有被
+看過。它不消耗任何區間。
+
+```
+每 40 個交易日一筆決策 × 10 檔
+1 年    6 期    仍然太少
+3 年   19 期    與 2024-2026 那次 OOS 同量級
+5 年   32 期    開始有意義
+```
+
+## 為什麼從「校準器 + 移動停損」換成「原始分數 Top 10」
+
+實測（`2026-09-16_漲停預測力與成本結構.md`）：校準器（12 等級）→ 門檻
+→ 槽位佇列三層在毀訊號。
+
+```
+經過三層        60 日 CPCV 中位數 +5.06%｜5% 分位 −27.86%
+直接用原始分數   40 日 CPCV 中位數 +94.39%｜5% 分位 +13.68%｜15/15 路徑為正
+```
+
+樣本外（2024-01 ~ 2026-08，已用掉）：累積淨 +138.83%、Sharpe 1.08，
+超過隨機 10 檔的 95% 分位（+120.97%），但**輸 0050 買進持有
+（+242.15%、Sharpe 1.90）**。
+
+⚠️ **所以這不是「已證明能賺錢的策略」。** 它是目前證據最完整的一組，
+記進帳本是為了讓時間累積乾淨樣本，不是背書。
+
+## 參數固定（禁令 7、8）
+
+不接受策略參數的命令列覆寫。參數變了就換 `STRATEGY_VERSION`——帳本的
+唯一鍵用 `strategy_version`，兩個版本會並存而不是互相覆蓋。
+
+用法：
+    .venv/bin/python scripts/record_forward.py            # 產生並記錄
+    .venv/bin/python scripts/record_forward.py --settle    # 回填已到期的
+    .venv/bin/python scripts/record_forward.py --dry-run   # 只看不寫
+"""
 
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
-from bisect import bisect_right
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -15,53 +59,78 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from weekly_plan_trailing import (  # noqa: E402
-    CALIBRATION_BINS,
-    CALIBRATION_MIN_SAMPLES,
-    CORRELATION_WINDOW,
-    INDUSTRY_MAP,
-    STRATEGY_VERSION,
-    build_calibration_set,
-    build_signal,
-    compute_beta,
-    compute_correlations,
+from taiwan_quant.config.costs import (  # noqa: E402
+    DEFAULT as DEFAULT_COST,
+    resolve_tier,
 )
-
-from taiwan_quant.config.costs import Tier  # noqa: E402
 from taiwan_quant.data.calendar import (  # noqa: E402
     due_trading_date,
     load_trading_calendar,
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
+from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     FROZEN_DATA_START,
     HISTORY_DB_PATH,
     load_chips,
     load_prices,
-    load_universe_at,
 )
-from taiwan_quant.features.technical import build_technical  # noqa: E402
 from taiwan_quant.forward_predictions import (  # noqa: E402
     ForwardPrediction,
     list_unsettled_predictions,
     record_forward_predictions,
     settle_forward_prediction,
 )
-from taiwan_quant.labeling.trailing_stop import label_trailing  # noqa: E402
-from taiwan_quant.ranking.trailing_portfolio import (  # noqa: E402
-    DEFAULT_EDGE_Z,
-    TrailingCandidate,
-    select_trailing_portfolio,
+from taiwan_quant.ranking.tie_break import (  # noqa: E402
+    DEFAULT_TIE_SEED,
+    deterministic_jitter,
 )
-from taiwan_quant.strategies.families import STRATEGY_FAMILIES  # noqa: E402
-from taiwan_quant.validation.calibration import (  # noqa: E402
-    CalibrationError,
-    fit_return_calibrator,
-)
+
+import scripts.validate_oos_trailing as V  # noqa: E402
+
+# ══════════════════════════════════════════════════════════════
+# 固定參數（禁令 7、8）——參數變了就換 STRATEGY_VERSION
+# ══════════════════════════════════════════════════════════════
+
+FAMILY = "動能突破"
+HOLDING_DAYS = 40
+N_POSITIONS = 10
+CAPITAL = 400_000.0
+UNIVERSE_SIZE = 150
+UNIVERSE_BASIS = "market_cap"
+MIN_CANDIDATES = 30
+INCLUDE_ETFS = False
+"""
+ETF 暫不納入候選。
+
+`--include-etfs` 的效果在 2024-01 ~ 2026-08 無法驗證（那個區間已用掉），
+所以帳本先記不含 ETF 的版本。要記含 ETF 的版本就換 `STRATEGY_VERSION`，
+兩者會在帳本裡並存、在同一段未來上被比較——那才是帳本的價值。
+"""
+
+STRATEGY_VERSION = "momentum_top10_h40@v1"
+
+PARAMS = {
+    "family": FAMILY,
+    "holding_days": HOLDING_DAYS,
+    "n_positions": N_POSITIONS,
+    "capital": CAPITAL,
+    "universe_size": UNIVERSE_SIZE,
+    "universe_basis": UNIVERSE_BASIS,
+    "min_candidates": MIN_CANDIDATES,
+    "include_etfs": INCLUDE_ETFS,
+    "cost_model": "taiwan_quant.config.costs.DEFAULT",
+    "cost_per_name": "resolve_tier(price, capital/n_positions, is_etf)",
+    "tie_seed": DEFAULT_TIE_SEED,
+    "ranking": "raw score, no calibrator/threshold/slot-queue",
+    "entry": "T+1 open",
+    "exit": f"T+{HOLDING_DAYS} close",
+}
+PARAMS_JSON = json.dumps(PARAMS, ensure_ascii=False, sort_keys=True)
 
 
 def latest_price_date(db_path: Path) -> date:
-    """查詢資料截止日；只讀 metadata，不繞過價格凍結守門。"""
+    """查詢資料截止日；只讀 metadata，不繞過價格凍結守門"""
     with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as con:
         value = con.execute("SELECT MAX(date) FROM stock_daily").fetchone()[0]
     if value is None:
@@ -69,181 +138,135 @@ def latest_price_date(db_path: Path) -> date:
     return date.fromisoformat(value)
 
 
-def generate_predictions(
-    db_path: Path,
-    as_of: date,
-    start: date,
-    horizon: int,
-    capital: float,
-    family_names: list[str],
-    limit: int,
-    edge_z: float,
-) -> list[ForwardPrediction]:
-    """使用既有校準、門檻、成本與投組約束產生前推預測。"""
-    universe = load_universe_at(as_of, db_path=db_path, limit=150)
-    stock_ids = universe.stock_ids[:limit]
+def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
+    """
+    產生 `as_of` 當日的前推預測。
+
+    Args:
+        db_path: SQLite 檔案路徑
+        as_of: 決策日（資料截止日）
+
+    Returns:
+        最多 `N_POSITIONS` 筆預測
+
+    ⚠️ `entry_price` 用的是 **`as_of` 的收盤價**，因為 T+1 開盤價此刻還
+    不存在。實際成交價會不同——結算時用真正的 T+1 開盤價重算報酬。
+    """
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    members = [
+        row[0]
+        for row in con.execute(
+            "SELECT DISTINCT stock_id FROM universe_history WHERE basis = ?",
+            (UNIVERSE_BASIS,),
+        )
+    ]
+    con.close()
+    members = list(merge_etf_candidates(tuple(members), include=True))
+
     unlock = as_of >= FROZEN_DATA_START
-    prices = load_prices(
-        stock_ids,
-        start=start,
-        end=as_of,
-        db_path=db_path,
-        adjusted=True,
-        unlock_frozen=unlock,
-        frozen_reason="record_forward 產生前推預測" if unlock else None,
-    )
-    chips = load_chips(
-        stock_ids,
-        start=start,
-        end=as_of,
-        db_path=db_path,
-        unlock_frozen=unlock,
-        frozen_reason="record_forward 產生前推預測" if unlock else None,
-    )
-    by_stock = build_dataset(stock_ids, prices, chips).by_stock
-    tiers = {sid: Tier(universe.tier_of(sid)) for sid in by_stock}
-    returns_by_stock = {sid: bars["close"].pct_change() for sid, bars in by_stock.items()}
-    market_returns = pd.DataFrame(returns_by_stock).mean(axis=1)
+    reason = "record_forward 產生前推預測" if unlock else None
+    prices = load_prices(members, start=date(2015, 1, 1), end=as_of, adjusted=True,
+                         db_path=db_path, unlock_frozen=unlock, frozen_reason=reason)
+    chips = load_chips(members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
+                       unlock_frozen=unlock, frozen_reason=reason)
+    by_stock = build_dataset(members, prices, chips).by_stock
 
-    atr_ratios = {
-        sid: float(value)
-        for sid, bars in by_stock.items()
-        if np.isfinite(value := build_technical(bars)["true_range_ratio_14"].iloc[-1])
-    }
-    atr_percentiles = (
-        pd.Series(atr_ratios).rank(pct=True).to_dict() if atr_ratios else {}
+    calendar = V.trading_calendar(by_stock)
+    day = calendar[-1]
+    scores = V.precompute_scores(by_stock)[FAMILY]
+
+    allowed = merge_etf_candidates(
+        tuple(V.resolve_members([day], db_path, UNIVERSE_SIZE, UNIVERSE_BASIS)
+              .get(day) or ()),
+        include=INCLUDE_ETFS,
     )
-    calendar = load_trading_calendar(db_path)
-    # 隔離：訓練標籤必須在 as_of 當天就已揭曉，所以訓練截止日往前推整整
-    # horizon 個**交易日**。原本用 `as_of - horizon * 2 天` 這種日曆日
-    # 近似，會隨農曆年漂移，而且跟 walk_forward 的隔離定義對不上。
-    as_of_index = bisect_right(calendar, as_of) - 1
-    if as_of_index < horizon:
-        raise ValueError(f"{as_of} 之前不足 {horizon} 個交易日，無法隔離訓練標籤")
-    train_end = pd.Timestamp(calendar[as_of_index - horizon])
+    ranked = pd.Series(
+        {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
+    ).dropna()
+    if len(ranked) < MIN_CANDIDATES:
+        raise RuntimeError(
+            f"{day.date()} 只有 {len(ranked)} 檔可評分，低於 {MIN_CANDIDATES}"
+        )
+
+    ordered = sorted(
+        ranked.index,
+        key=lambda sid: (-float(ranked[sid]),
+                         deterministic_jitter(sid, DEFAULT_TIE_SEED)),
+    )[:N_POSITIONS]
+
+    trading_calendar = load_trading_calendar(db_path)
+    due = due_trading_date(trading_calendar, day.date(), HOLDING_DAYS)
     predicted_at = datetime.now().astimezone().isoformat()
-    due_date = due_trading_date(calendar, as_of, horizon).isoformat()
+    amount = CAPITAL / N_POSITIONS
+
     output: list[ForwardPrediction] = []
-
-    families = [family for family in STRATEGY_FAMILIES if family.name in family_names]
-    unknown = sorted(set(family_names) - {family.name for family in families})
-    if unknown:
-        raise ValueError(f"未知策略族：{unknown}")
-
-    for family in families:
-        scores, returns = build_calibration_set(by_stock, family, horizon, train_end)
-        try:
-            calibrator = fit_return_calibrator(
-                scores,
-                returns,
-                n_bins=CALIBRATION_BINS,
-                min_samples_per_bin=CALIBRATION_MIN_SAMPLES,
-            )
-        except CalibrationError as exc:
-            print(f"跳過 {family.name}：校準失敗：{exc}")
-            continue
-
-        signals = []
-        for sid, bars in by_stock.items():
-            signal = build_signal(
-                sid,
-                bars,
-                family,
-                horizon,
-                calibrator,
-                volatility_pct=atr_percentiles.get(sid, 0.5),
-                beta=compute_beta(
-                    returns_by_stock[sid], market_returns, CORRELATION_WINDOW
-                ),
-            )
-            if signal is not None:
-                signals.append(signal)
-        signal_by_id = {signal.stock_id: signal for signal in signals}
-        candidates = [
-            TrailingCandidate(
-                stock_id=signal.stock_id,
-                expected_gross_return=signal.expected_gross_return,
-                return_std=signal.return_std,
-                n_samples=signal.n_samples,
-                trail_pct=signal.trail_pct,
-                entry_price=signal.entry_price,
-                tier=tiers.get(signal.stock_id, Tier.MID),
-                industry=INDUSTRY_MAP.get(signal.stock_id, "其他"),
-                volatility_pct=signal.volatility_pct,
-                beta=signal.beta,
-                max_horizon=horizon,
-            )
-            for signal in signals
-        ]
-        correlations = compute_correlations(
-            {sid: returns_by_stock[sid] for sid in signal_by_id},
-            CORRELATION_WINDOW,
-        )
-        result = select_trailing_portfolio(
-            candidates, capital, correlations, edge_z=edge_z
-        )
-        for rank, position in enumerate(result.positions, start=1):
-            candidate = position.candidate
-            signal = signal_by_id[candidate.stock_id]
-            output.append(ForwardPrediction(
-                predicted_at=predicted_at,
-                data_asof=as_of.isoformat(),
-                strategy_version=STRATEGY_VERSION,
-                edge_z=edge_z,
-                family=family.name,
-                horizon=horizon,
-                stock_id=candidate.stock_id,
-                rank=rank,
-                score=signal.score,
-                expected_return=candidate.expected_gross_return,
-                trail_pct=candidate.trail_pct,
-                entry_price=candidate.entry_price,
-                due_date=due_date,
-            ))
+    for rank, sid in enumerate(ordered, start=1):
+        close = float(by_stock[sid]["close"].loc[day])
+        tier = resolve_tier(price=close, amount=amount, is_etf=is_etf(sid))
+        output.append(ForwardPrediction(
+            predicted_at=predicted_at,
+            data_asof=str(day.date()),
+            strategy_version=STRATEGY_VERSION,
+            params_json=PARAMS_JSON,
+            stock_id=sid,
+            rank=rank,
+            score=float(ranked[sid]),
+            entry_price=close,
+            due_date=due.isoformat(),
+            round_trip_cost=DEFAULT_COST.round_trip_rate(tier),
+        ))
     return output
 
 
-def settle_predictions(db_path: Path) -> tuple[int, int]:
-    """只結算已有足夠未來交易日的預測。"""
+def settle(db_path: Path) -> tuple[int, int]:
+    """
+    結算已到期的預測。
+
+    Returns:
+        (實際結算筆數, 待結算總筆數)
+
+    **只結算已有足夠未來交易日的**。報酬用 T+1 開盤買、T+HOLDING_DAYS
+    收盤賣重算——`entry_price` 記的是決策日收盤，不是成交價。
+    """
     pending = list_unsettled_predictions(db_path)
     if not pending:
         return 0, 0
-    latest = latest_price_date(db_path)
+
+    calendar = load_trading_calendar(db_path)
+    position = {d: i for i, d in enumerate(calendar)}
     stock_ids = sorted({item.stock_id for item in pending})
     earliest = min(date.fromisoformat(item.data_asof) for item in pending)
+    latest = calendar[-1]
     prices = load_prices(
-        stock_ids,
-        start=earliest,
-        end=latest,
-        db_path=db_path,
-        adjusted=True,
+        stock_ids, start=earliest, end=latest, adjusted=True, db_path=db_path,
         unlock_frozen=latest >= FROZEN_DATA_START,
         frozen_reason="record_forward --settle 回填實現報酬",
     )
+
     settled = 0
     for item in pending:
+        params = json.loads(item.params_json)
+        horizon = int(params.get("holding_days", HOLDING_DAYS))
+        decision = date.fromisoformat(item.data_asof)
+        if decision not in position:
+            continue
+        i = position[decision]
+        if i + 1 + horizon >= len(calendar):
+            continue                      # 還沒到期
         try:
             bars = prices.xs(item.stock_id, level="stock_id")
         except KeyError:
             continue
-        positions = np.flatnonzero(bars.index <= pd.Timestamp(item.data_asof))
-        if not len(positions):
-            continue
-        decision_idx = int(positions[-1])
-        if len(bars) - decision_idx - 1 < item.horizon:
-            continue
-        outcome = label_trailing(
-            bars,
-            decision_idx=decision_idx,
-            trail_pct=item.trail_pct,
-            max_horizon=item.horizon,
-        )
-        if outcome is None:
+        entry_day, exit_day = calendar[i + 1], calendar[i + 1 + horizon]
+        if entry_day not in bars.index or exit_day not in bars.index:
+            continue                      # 停牌等缺價，不回填舊價假裝成交
+        entry = float(bars.loc[entry_day, "open"])
+        exit_ = float(bars.loc[exit_day, "close"])
+        if entry <= 0:
             continue
         if settle_forward_prediction(
-            db_path,
-            item,
-            realized_return=outcome.gross_return,
+            db_path, item,
+            realized_return=exit_ / entry - 1.0,
             settled_at=datetime.now(UTC),
         ):
             settled += 1
@@ -251,47 +274,46 @@ def settle_predictions(db_path: Path) -> tuple[int, int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="記錄或結算不可回寫的前推預測")
+    parser = argparse.ArgumentParser(
+        description="前推預測記錄與結算（無策略參數可調）")
     parser.add_argument("--settle", action="store_true", help="結算已到期預測")
+    parser.add_argument("--dry-run", action="store_true", help="只顯示不寫入")
     parser.add_argument("--db", type=Path, default=HISTORY_DB_PATH)
-    parser.add_argument("--as-of", default=None, help="資料截止日；預設資料庫最新日")
-    parser.add_argument("--start", default="2015-01-01")
-    parser.add_argument("--horizon", type=int, default=60)
-    parser.add_argument("--capital", type=float, default=400_000.0)
-    parser.add_argument("--limit", type=int, default=150)
-    parser.add_argument("--edge-z", type=float, default=DEFAULT_EDGE_Z)
-    parser.add_argument(
-        "--family",
-        action="append",
-        dest="families",
-        help="可重複指定；預設記錄全部三個策略族",
-    )
+    parser.add_argument("--as-of", default=None, help="決策日；預設資料庫最新日")
     args = parser.parse_args()
 
     if args.settle:
-        settled, pending = settle_predictions(args.db)
-        print(f"已結算 {settled} / {pending} 筆待結算預測")
+        done, pending = settle(args.db)
+        print(f"已結算 {done} / {pending} 筆待結算預測")
         return
 
     as_of = date.fromisoformat(args.as_of) if args.as_of else latest_price_date(args.db)
-    names = args.families or [family.name for family in STRATEGY_FAMILIES]
-    predictions = generate_predictions(
-        args.db,
-        as_of,
-        date.fromisoformat(args.start),
-        args.horizon,
-        args.capital,
-        names,
-        args.limit,
-        args.edge_z,
-    )
+    predictions = generate(args.db, as_of)
+
+    print(f"版本 {STRATEGY_VERSION}｜資料截止 {predictions[0].data_asof}"
+          f"｜揭曉日 {predictions[0].due_date}")
+    print(f"每檔 {CAPITAL / N_POSITIONS:,.0f} 元｜{FAMILY}｜持有 {HOLDING_DAYS} 日")
+    print()
+    print(f"{'排名':>4}{'代號':>8}{'分數':>9}{'決策日收盤':>12}"
+          f"{'成本分層':>12}{'來回成本':>10}")
+    print("-" * 58)
+    for p in predictions:
+        tier = resolve_tier(price=p.entry_price, amount=CAPITAL / N_POSITIONS,
+                            is_etf=is_etf(p.stock_id))
+        print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
+              f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%")
+    print("-" * 58)
+    print(f"平均來回成本 {np.mean([p.round_trip_cost for p in predictions])*100:.3f}%")
+    print()
+    if args.dry_run:
+        print("--dry-run：未寫入帳本")
+        return
     inserted = record_forward_predictions(args.db, predictions)
-    print(f"產生 {len(predictions)} 筆，新增 {inserted} 筆前推預測")
-    for item in predictions:
-        print(
-            f"  {item.family} #{item.rank} {item.stock_id}｜"
-            f"分數 {item.score:.4f}｜預計揭曉 {item.due_date}"
-        )
+    print(f"產生 {len(predictions)} 筆，新增 {inserted} 筆"
+          + ("（0 筆代表這個版本在這個資料日已記錄過）" if inserted == 0 else ""))
+    print()
+    print("⚠️  這是目前證據最完整的一組，不是已證明能賺錢的策略。")
+    print("    樣本外（已用掉的區間）超過隨機 95% 分位，但輸 0050 買進持有。")
 
 
 if __name__ == "__main__":
