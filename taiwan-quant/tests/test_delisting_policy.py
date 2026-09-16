@@ -55,3 +55,26 @@ def test_temporary_suspension_is_not_treated_as_delisting() -> None:
     assert result.kind is MissingPriceKind.SUSPENDED_OR_MISSING
     assert result.gross_return is None
     assert result.exit_date is None
+
+
+@pytest.mark.unit
+def test_delisting_after_target_is_not_known_at_settlement_time() -> None:
+    """目標日後才下市，不能倒用未來事件把當下缺價分類成已下市。"""
+    bars = pd.DataFrame(
+        {
+            "open": [100.0, 80.0],
+            "close": [101.0, 80.0],
+        },
+        index=pd.to_datetime(["2020-08-14", "2020-08-17"]),
+    )
+
+    result = settle_holding_period(
+        bars,
+        entry_date=pd.Timestamp("2020-08-14"),
+        target_date=pd.Timestamp("2020-10-15"),
+        delisted_date=date(2021, 4, 1),
+    )
+
+    assert result.kind is MissingPriceKind.SUSPENDED_OR_MISSING
+    assert result.gross_return is None
+    assert result.exit_date is None
