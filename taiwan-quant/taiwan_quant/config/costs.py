@@ -25,6 +25,7 @@ Dashboard 顯示毛報酬、離線腳本顯示淨報酬，兩套數字不一致�
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -133,9 +134,9 @@ def resolve_tier(
     40 萬買不起一張台積電是真的，但 265 檔市值池裡有 153 檔（58%）在
     40 萬 × 33% 的上限下買得起整張。
     """
-    if actual_price is None or actual_price <= 0:
+    if actual_price is None or not math.isfinite(actual_price) or actual_price <= 0:
         raise ValueError(f"actual_price 必須為正，得到 {actual_price}")
-    if adjusted_price <= 0:
+    if not math.isfinite(adjusted_price) or adjusted_price <= 0:
         raise ValueError(f"adjusted_price 必須為正，得到 {adjusted_price}")
     if amount <= 0:
         raise ValueError(f"amount 必須為正，得到 {amount}")

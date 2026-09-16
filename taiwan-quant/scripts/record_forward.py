@@ -274,6 +274,9 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
               .get(day) or ()),
         include=INCLUDE_ETFS,
     )
+    large_members = (
+        V.resolve_members([day], db_path, 50, UNIVERSE_BASIS).get(day) or set()
+    )
     ranked = pd.Series(
         {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
     ).dropna()
@@ -319,6 +322,7 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 actual_price=actual_close,
                 adjusted_price=close,
                 amount=amount,
+                large=sid in large_members,
                 is_etf=is_etf(sid),
             )
             output.append(ForwardPrediction(
@@ -452,16 +456,11 @@ def main() -> None:
         print(f"── {variant.strategy_version} " + "─" * max(0, 44 - len(variant.strategy_version)))
         print(f"   {variant.note}")
         print(f"{'排名':>4}{'代號':>8}{'分數':>9}{'決策日收盤':>12}"
-              f"{'成本分層':>12}{'來回成本':>10}  產業")
+              f"{'來回成本':>10}  產業")
         print("-" * 70)
         for p in rows:
-            tier = resolve_tier(
-                                actual_price=p.entry_price,
-                                adjusted_price=p.entry_price,
-                                amount=CAPITAL / N_POSITIONS,
-                                is_etf=is_etf(p.stock_id))
             print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
-                  f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%  "
+                  f"{p.round_trip_cost*100:>9.3f}%  "
                   f"{industries.get(p.stock_id, UNCLASSIFIED)}")
         print("-" * 70)
         counts = Counter(industries.get(p.stock_id, UNCLASSIFIED) for p in rows)

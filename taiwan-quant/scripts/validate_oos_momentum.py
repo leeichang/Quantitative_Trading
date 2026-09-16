@@ -168,6 +168,9 @@ def run(db_path: Path, unlock: bool, reason: str | None,
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
     )
+    large_at = V.resolve_members(
+        decision_dates, db_path, 50, UNIVERSE_BASIS
+    )
     forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
 
     trades, per_period = [], []
@@ -195,6 +198,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         # 第一版把 0.671% 寫死在腳本裡，那繞過了單一來源，而且無法反映
         # 「買不起整張就是零股」與「ETF 跳動單位細 10 倍」這兩件事。
         entry_day = calendar[calendar.index(day) + 1]
+        large_members = large_at.get(day, set())
         per_name_cost = []
         for sid in picks:
             adjusted_price = float(opens.loc[entry_day, sid])
@@ -203,6 +207,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
                                 actual_price=actual_price,
                                 adjusted_price=adjusted_price,
                                 amount=CAPITAL / N_POSITIONS,
+                                large=sid in large_members,
                                 is_etf=is_etf(sid))
             per_name_cost.append(DEFAULT_COST.round_trip_rate(tier))
         cost = float(np.mean(per_name_cost))
@@ -223,6 +228,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
                                actual_price=actual_price,
                                adjusted_price=adjusted_price,
                                amount=CAPITAL / N_POSITIONS,
+                               large=sid in large_members,
                                is_etf=is_etf(sid)).value,
                            "is_etf": is_etf(sid)})
 

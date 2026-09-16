@@ -144,6 +144,7 @@ def evaluate(
     calendar: list[pd.Timestamp],
     scores: dict[str, dict],
     members_at: dict,
+    large_at: dict,
     opens: pd.DataFrame,
     actual_opens: pd.DataFrame,
     closes: pd.DataFrame,
@@ -202,6 +203,7 @@ def evaluate(
         ids = [c.stock_id for c in picked]
         gross = float(realized[ids].mean())
         entry_day = calendar[calendar.index(day) + 1]
+        large_members = large_at.get(day, set())
 
         # 兩種資金配置的成本不同：固定 1/N 每檔只有 4 萬（多走零股），
         # 等權攤到 k 檔時每檔 400,000/k 更多（更容易買得起整張）。
@@ -210,6 +212,7 @@ def evaluate(
             *,
             picked_ids: tuple[str, ...] = tuple(ids),
             trade_day: pd.Timestamp = entry_day,
+            historical_large: frozenset[str] = frozenset(large_members),
         ) -> float:
             return float(
                 np.mean(
@@ -219,6 +222,7 @@ def evaluate(
                                 actual_price=float(actual_opens.loc[trade_day, sid]),
                                 adjusted_price=float(opens.loc[trade_day, sid]),
                                 amount=amount,
+                                large=sid in historical_large,
                                 is_etf=is_etf(sid),
                             )
                         )
@@ -332,6 +336,9 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
     )
+    large_at = V.resolve_members(
+        decision_dates, db_path, 50, UNIVERSE_BASIS
+    )
 
     results = {}
     for name, configuration in CONFIGS.items():
@@ -341,6 +348,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
             calendar,
             scores,
             members_at,
+            large_at,
             opens,
             actual_opens,
             closes,

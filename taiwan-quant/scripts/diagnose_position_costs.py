@@ -86,13 +86,19 @@ def _frame(
     return prices[column].unstack("stock_id").reindex(calendar)
 
 
-def _tier(
-    sid: str, actual_price: float, adjusted_price: float, amount: float
+def resolve_pick_tier(
+    sid: str,
+    actual_price: float,
+    adjusted_price: float,
+    amount: float,
+    *,
+    is_large: bool,
 ) -> Tier:
     return resolve_tier(
         actual_price=actual_price,
         adjusted_price=adjusted_price,
         amount=amount,
+        large=is_large,
         is_etf=is_etf(sid),
     )
 
@@ -127,6 +133,9 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
     members_at = validation.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, DEFAULT_UNIVERSE_BASIS
     )
+    large_at = validation.resolve_members(
+        decision_dates, db_path, 50, DEFAULT_UNIVERSE_BASIS
+    )
     policies = (
         "legacy_adjusted_rate",
         "adjusted_exact_cost",
@@ -151,6 +160,7 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
             ),
         )
         entry_day = calendar[calendar.index(day) + 1]
+        large_members = large_at.get(day, set())
         for n in POSITION_COUNTS:
             if len(ordered) < n:
                 continue
@@ -164,8 +174,13 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
                 actual = float(actual_opens.loc[entry_day, sid])
                 if not np.isfinite(actual) or actual <= 0:
                     raise RuntimeError(f"{entry_day.date()} {sid} 缺實際開盤價")
-                legacy = _tier(sid, adjusted, adjusted, amount)
-                corrected = _tier(sid, actual, adjusted, amount)
+                large = sid in large_members
+                legacy = resolve_pick_tier(
+                    sid, adjusted, adjusted, amount, is_large=large
+                )
+                corrected = resolve_pick_tier(
+                    sid, actual, adjusted, amount, is_large=large
+                )
                 for policy, tier, exact in (
                     ("legacy_adjusted_rate", legacy, False),
                     ("adjusted_exact_cost", legacy, True),
