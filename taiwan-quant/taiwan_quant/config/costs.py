@@ -46,20 +46,98 @@ MIN_FEE: float = 20.0
 
 
 class Tier(str, Enum):
-    """流動性分層，決定滑價"""
+    """
+    流動性分層，決定滑價。
+
+    兩個維度：**標的類別**（0050 成分股 / 中型 100 / ETF）× **交易單位**
+    （零股 / 整股）。原本只有前兩個成員，都隱含「零股」。
+    """
 
     LARGE = "0050"
-    """台灣 50 成分股，大型股零股"""
+    """台灣 50 成分股，大型股**零股**（CLAUDE.md 禁令 4：0.3%）"""
 
     MID = "0051"
-    """中型 100 成分股，零股價差更寬"""
+    """中型 100 成分股，**零股**價差更寬（CLAUDE.md 禁令 4：0.4%）"""
+
+    LARGE_WHOLE = "0050-lot"
+    """台灣 50 成分股，**整股**"""
+
+    MID_WHOLE = "0051-lot"
+    """中型 100 成分股，**整股**"""
+
+    ETF_ODD = "etf-odd"
+    """ETF 本身（非成分股），**零股**"""
+
+    ETF_WHOLE = "etf-lot"
+    """ETF 本身，**整股**"""
 
 
 SLIPPAGE: dict[Tier, float] = {
+    # 零股，D3/D4 明文規定，不可修改
     Tier.LARGE: 0.003,
     Tier.MID: 0.004,
+    # 整股。實證依據：台股跳動單位隱含的半價差中位數 0.0937%
+    # （490 筆實際持倉，股價 0~50 元 0.0973%、50~100 元 0.0708%、
+    # 100~500 元 0.1411%），且 4 萬元部位對當日成交額中位僅 98.9 ppm，
+    # 市場衝擊近 0。取 0.1% 略為保守。
+    Tier.LARGE_WHOLE: 0.001,
+    Tier.MID_WHOLE: 0.001,
+    # ETF。實證 2024 年起收盤價最小跳動：0050 為 0.01（半價差 0.0037%）、
+    # 0056 為 0.01（0.0133%），比股票（2330 tick 1.0、1303 tick 0.05）
+    # 細 4~10 倍。零股取 0.1%（跳動下限的 25 倍）、整股 0.05%（13 倍），
+    # 都遠高於跳動下限，是保守處理。
+    Tier.ETF_ODD: 0.001,
+    Tier.ETF_WHOLE: 0.0005,
 }
-"""零股滑價，依流動性分層（D3）"""
+"""
+滑價，依標的類別與交易單位分層。
+
+⚠️ `LARGE` 與 `MID`（零股）的數字來自 CLAUDE.md 禁令 4，是明文規格，
+**只能新增成員，不可修改既有值**。
+"""
+
+LOT_SIZE: int = 1000
+"""台股一張 = 1,000 股"""
+
+
+def lot_size() -> int:
+    """一張的股數。包成函式是為了讓呼叫端不要各自寫死 1000"""
+    return LOT_SIZE
+
+
+def resolve_tier(
+    price: float, amount: float, *, large: bool = True, is_etf: bool = False
+) -> Tier:
+    """
+    依股價與部位金額決定分層。
+
+    Args:
+        price: 每股價格
+        amount: 這一檔要投入的金額
+        large: 是否為 0050 成分股（`False` 視為中型 100）。ETF 時忽略
+        is_etf: 標的本身是否為 ETF（不是「ETF 的成分股」）
+
+    Returns:
+        對應的 `Tier`
+
+    Raises:
+        ValueError: `price` 或 `amount` 非正
+
+    **買得起一整張就用整股滑價，否則用零股。** 這是 D4 零股假設缺的維度：
+    40 萬買不起一張台積電是真的，但 265 檔市值池裡有 153 檔（58%）在
+    40 萬 × 33% 的上限下買得起整張。
+    """
+    if price <= 0:
+        raise ValueError(f"price 必須為正，得到 {price}")
+    if amount <= 0:
+        raise ValueError(f"amount 必須為正，得到 {amount}")
+
+    whole = amount >= price * LOT_SIZE
+    if is_etf:
+        return Tier.ETF_WHOLE if whole else Tier.ETF_ODD
+    if large:
+        return Tier.LARGE_WHOLE if whole else Tier.LARGE
+    return Tier.MID_WHOLE if whole else Tier.MID
 
 
 # ══════════════════════════════════════════════════════════════

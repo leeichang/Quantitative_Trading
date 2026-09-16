@@ -71,6 +71,15 @@ from taiwan_quant.data.loader import (  # noqa: E402
 from taiwan_quant.validation.benchmarks import (  # noqa: E402
     equity_curve_statistics,
 )
+from taiwan_quant.data.etf_universe import (  # noqa: E402
+    is_etf,
+    merge_etf_candidates,
+)
+from taiwan_quant.config.costs import (  # noqa: E402
+    DEFAULT as DEFAULT_COST,
+    Tier,
+    resolve_tier,
+)
 from taiwan_quant.ranking.tie_break import DEFAULT_TIE_SEED, deterministic_jitter  # noqa: E402
 
 import scripts.validate_oos_trailing as V  # noqa: E402
@@ -90,16 +99,16 @@ UNIVERSE_SIZE = 150
 UNIVERSE_BASIS = "market_cap"
 MIN_CANDIDATES = 30
 
-FEE_RATE = 0.001425 * 0.6
-TAX_RATE = 0.003
-SLIPPAGE_ONE_WAY = 0.001
+REFERENCE_TIER = Tier.LARGE_WHOLE
 """
-整股單邊滑價。實證依據：台股跳動單位隱含的半價差中位數 0.0937%
-（490 筆實際持倉），4 萬元部位對當日成交額中位僅 98.9 ppm，衝擊近 0。
-這裡取 0.1% 略為保守。損益兩平值是 2.210%，安全邊際 23.5 倍。
+對照組（等權、隨機）用的代表性分層。
+
+策略本身的成本**逐檔**由 `resolve_tier` 決定，不用這個常數——買不起整張
+的走零股、ETF 走 ETF 分層。這裡只是讓對照組有一個固定的參考成本，
+否則隨機組合每次抽到不同標的會連成本一起變動，就不是純粹的對照了。
 """
 
-ROUND_TRIP = FEE_RATE * 2 + TAX_RATE + SLIPPAGE_ONE_WAY * 2
+ROUND_TRIP = DEFAULT_COST.round_trip_rate(REFERENCE_TIER)
 
 OOS_START = date(2024, 1, 1)
 DEV_END = date(2023, 12, 29)
@@ -114,7 +123,8 @@ def build_frame(
     ).reindex(calendar)
 
 
-def run(db_path: Path, unlock: bool, reason: str | None) -> dict:
+def run(db_path: Path, unlock: bool, reason: str | None,
+        include_etfs: bool = False) -> dict:
     """在 OOS 區間跑一次，回傳可落盤的結果"""
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     members = [
@@ -127,6 +137,10 @@ def run(db_path: Path, unlock: bool, reason: str | None) -> dict:
     latest = con.execute("SELECT MAX(date) FROM stock_daily").fetchone()[0]
     con.close()
     end = date.fromisoformat(latest)
+
+    # ETF **一律載入**（對照組需要），但只有 include_etfs 時才進候選名單。
+    # 第一版忘了這件事，導致必跑對照組的 0050/0051/0056 全部印不出來。
+    members = list(merge_etf_candidates(tuple(members), include=True))
 
     # 從 2015 載入是為了讓 T 日的分數有足夠歷史；分數只用 T 日及之前的資料
     # （物理截斷測試已驗證無 look-ahead），決策日則嚴格限制在 OOS 區間內。
@@ -151,7 +165,8 @@ def run(db_path: Path, unlock: bool, reason: str | None) -> dict:
 
     trades, per_period = [], []
     for day in decision_dates:
-        allowed = members_at.get(day)
+        allowed = merge_etf_candidates(
+            tuple(members_at.get(day) or ()), include=include_etfs)
         if not allowed:
             continue
         ranked = pd.Series(
@@ -168,13 +183,32 @@ def run(db_path: Path, unlock: bool, reason: str | None) -> dict:
         )
         picks = ordered[:N_POSITIONS]
         gross = float(realized[picks].mean())
-        per_period.append({"decision_date": str(day.date()),
-                           "gross": gross, "net": gross - ROUND_TRIP,
-                           "n_candidates": int(len(common))})
+
+        # 成本逐檔決定（禁令 3：一律呼叫 config/costs.py）。
+        # 第一版把 0.671% 寫死在腳本裡，那繞過了單一來源，而且無法反映
+        # 「買不起整張就是零股」與「ETF 跳動單位細 10 倍」這兩件事。
+        entry_day = calendar[calendar.index(day) + 1]
+        per_name_cost = []
         for sid in picks:
+            price = float(opens.loc[entry_day, sid])
+            tier = resolve_tier(price=price, amount=CAPITAL / N_POSITIONS,
+                                is_etf=is_etf(sid))
+            per_name_cost.append(DEFAULT_COST.round_trip_rate(tier))
+        cost = float(np.mean(per_name_cost))
+
+        per_period.append({"decision_date": str(day.date()),
+                           "gross": gross, "cost": cost, "net": gross - cost,
+                           "n_candidates": int(len(common))})
+        for sid, c in zip(picks, per_name_cost, strict=True):
+            price = float(opens.loc[entry_day, sid])
             trades.append({"decision_date": str(day.date()), "stock_id": sid,
                            "score": float(ranked[sid]),
-                           "gross_return": float(realized[sid])})
+                           "gross_return": float(realized[sid]),
+                           "entry_price": price, "round_trip_cost": c,
+                           "tier": resolve_tier(
+                               price=price, amount=CAPITAL / N_POSITIONS,
+                               is_etf=is_etf(sid)).value,
+                           "is_etf": is_etf(sid)})
 
     nets = np.array([p["net"] for p in per_period])
     equity = pd.Series(np.cumprod(1 + nets),
@@ -229,9 +263,12 @@ def run(db_path: Path, unlock: bool, reason: str | None) -> dict:
             "decision_stride": DECISION_STRIDE, "n_positions": N_POSITIONS,
             "capital": CAPITAL, "universe_size": UNIVERSE_SIZE,
             "universe_basis": UNIVERSE_BASIS, "min_candidates": MIN_CANDIDATES,
-            "fee_rate_one_way": FEE_RATE, "tax_rate": TAX_RATE,
-            "slippage_one_way": SLIPPAGE_ONE_WAY, "round_trip": ROUND_TRIP,
+            "cost_model": "taiwan_quant.config.costs.DEFAULT",
+            "reference_tier": REFERENCE_TIER.value,
+            "reference_round_trip": ROUND_TRIP,
+            "strategy_cost": "per-name via resolve_tier()",
             "tie_seed": DEFAULT_TIE_SEED, "dev_end": str(DEV_END),
+            "include_etfs": include_etfs,
             "oos_start": str(OOS_START), "data_end": str(end),
         },
         "n_periods": len(per_period),
@@ -263,13 +300,19 @@ def main() -> None:
     parser.add_argument("--db", type=Path, default=HISTORY_DB_PATH)
     parser.add_argument("--out", type=Path,
                         default=Path("reports/oos_momentum_top10_h40.json"))
+    parser.add_argument(
+        "--include-etfs", action="store_true",
+        help="把 0050/0051/0056 加進候選。⚠️ 需要新的 OOS 區間，"
+             "不可在已用過的 2024-01~2026-08 上驗證（禁令 6）",
+    )
     parser.add_argument("--unlock-frozen", action="store_true")
     parser.add_argument("--frozen-reason", default=None)
     args = parser.parse_args()
     if args.unlock_frozen and not (args.frozen_reason or "").strip():
         parser.error("--unlock-frozen 必須提供非空白的 --frozen-reason")
 
-    r = run(args.db, args.unlock_frozen, args.frozen_reason)
+    r = run(args.db, args.unlock_frozen, args.frozen_reason,
+            include_etfs=args.include_etfs)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(r, ensure_ascii=False, indent=2))
 
@@ -281,9 +324,9 @@ def main() -> None:
     print(f"OOS    {p['oos_start']} ~ {p['data_end']}（開發集止於 {p['dev_end']}）")
     print(f"參數   {p['family']}｜持有 {p['holding_days']} 日｜N={p['n_positions']}"
           f"｜標的池 {p['universe_basis']} 前 {p['universe_size']}")
-    print(f"成本   來回 {p['round_trip']*100:.3f}%"
-          f"（手續費 {p['fee_rate_one_way']*2*100:.4f}% + 稅 {p['tax_rate']*100:.2f}%"
-          f" + 滑價 {p['slippage_one_way']*2*100:.2f}%）")
+    print(f"成本   {p['cost_model']}｜策略逐檔分層"
+          f"｜對照組參考 {p['reference_tier']} {p['reference_round_trip']*100:.3f}%")
+    print(f"       實際平均來回 {np.mean([x['cost'] for x in r['per_period']])*100:.3f}%")
     print()
     print(f"期數 {r['n_periods']}｜交易 {r['n_trades']} 筆"
           f"｜為正 {r['periods_positive']}/{r['n_periods']}")
