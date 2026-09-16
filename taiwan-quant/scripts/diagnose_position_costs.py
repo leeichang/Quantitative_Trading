@@ -175,7 +175,11 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
                 if not np.isfinite(actual) or actual <= 0:
                     raise RuntimeError(f"{entry_day.date()} {sid} 缺實際開盤價")
                 large = sid in large_members
+                # 精確重現已發佈舊表：當時漏傳 large=，所有非 ETF 都走大型股。
                 legacy = resolve_pick_tier(
+                    sid, adjusted, adjusted, amount, is_large=True
+                )
+                adjusted_tier = resolve_pick_tier(
                     sid, adjusted, adjusted, amount, is_large=large
                 )
                 corrected = resolve_pick_tier(
@@ -183,7 +187,7 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
                 )
                 for policy, tier, exact in (
                     ("legacy_adjusted_rate", legacy, False),
-                    ("adjusted_exact_cost", legacy, True),
+                    ("adjusted_exact_cost", adjusted_tier, True),
                     ("actual_exact_cost", corrected, True),
                 ):
                     policy_costs[policy].append(_cost_rate(amount, tier, exact=exact))
