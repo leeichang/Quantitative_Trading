@@ -21,7 +21,7 @@ import scripts.validate_oos_trailing as validation  # noqa: E402
 from taiwan_quant.config.costs import DEFAULT, Tier, resolve_tier  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf  # noqa: E402
-from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
+from taiwan_quant.data.integrity import select_holding_positions  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
@@ -33,6 +33,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 DEV_END = date(2023, 12, 29)
 START = date(2015, 1, 1)
@@ -125,7 +126,7 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
     adjusted_opens = _frame(prices, "open", calendar)
     actual_opens = _frame(prices, RAW_OPEN_COLUMN, calendar)
     adjusted_closes = _frame(prices, "close", calendar)
-    forward = adjusted_closes.shift(-HOLDING_DAYS) / adjusted_opens.shift(-1) - 1.0
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     decision_dates = [
         day
@@ -152,30 +153,31 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        assert_holding_price_completeness(
-            decision_date=day,
-            calendar=calendar,
-            candidates=ranked.index,
-            opens=adjusted_opens,
-            closes=adjusted_closes,
-            holding_days=HOLDING_DAYS,
-        )
-        realized = forward.loc[day].dropna()
-        common = ranked.index.intersection(realized.index)
         ordered = sorted(
-            common,
+            ranked.index,
             key=lambda sid: (
                 -float(ranked[sid]),
                 deterministic_jitter(sid, DEFAULT_TIE_SEED),
             ),
         )
+        selected = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=ordered,
+            opens=adjusted_opens,
+            closes=adjusted_closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=max(POSITION_COUNTS),
+            delisted_dates=delisted_dates,
+        )
         entry_day = calendar[calendar.index(day) + 1]
         large_members = large_at.get(day, set())
         for n in POSITION_COUNTS:
-            if len(ordered) < n:
+            if len(selected) < n:
                 continue
-            picks = ordered[:n]
-            gross = float(realized[picks].mean())
+            positions = selected[:n]
+            picks = [position.stock_id for position in positions]
+            gross = float(np.mean([position.gross_return for position in positions]))
             amount = CAPITAL / n
             policy_costs: dict[str, list[float]] = defaultdict(list)
             policy_whole: dict[str, int] = defaultdict(int)

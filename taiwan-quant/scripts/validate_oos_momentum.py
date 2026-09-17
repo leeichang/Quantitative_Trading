@@ -75,7 +75,7 @@ from taiwan_quant.data.etf_universe import (  # noqa: E402
     is_etf,
     merge_etf_candidates,
 )
-from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
+from taiwan_quant.data.integrity import select_holding_positions  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -86,6 +86,7 @@ from taiwan_quant.ranking.tie_break import DEFAULT_TIE_SEED, deterministic_jitte
 from taiwan_quant.validation.benchmarks import (  # noqa: E402
     equity_curve_statistics,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 # ══════════════════════════════════════════════════════════════
 # 固定參數——不可由命令列覆寫（禁令 6、7、8）
@@ -171,6 +172,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         decision_dates, db_path, 50, UNIVERSE_BASIS
     )
     forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     trades, per_period = [], []
     for day in decision_dates:
@@ -181,25 +183,30 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        assert_holding_price_completeness(
-            decision_date=day,
-            calendar=calendar,
-            candidates=ranked.index,
-            opens=opens,
-            closes=closes,
-            holding_days=HOLDING_DAYS,
-        )
-        realized = forward.loc[day].dropna()
-        common = ranked.index.intersection(realized.index)
-        if len(common) < MIN_CANDIDATES:
+        if len(ranked) < MIN_CANDIDATES:
             continue
         ordered = sorted(
-            common,
+            ranked.index,
             key=lambda sid: (-float(ranked[sid]),
                              deterministic_jitter(sid, DEFAULT_TIE_SEED)),
         )
-        picks = ordered[:N_POSITIONS]
-        gross = float(realized[picks].mean())
+        selected = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=ordered,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=N_POSITIONS,
+            delisted_dates=delisted_dates,
+        )
+        if len(selected) < N_POSITIONS:
+            continue
+        picks = [position.stock_id for position in selected]
+        realized = pd.Series(
+            {position.stock_id: position.gross_return for position in selected}
+        )
+        gross = float(realized.mean())
 
         # 成本逐檔決定（禁令 3：一律呼叫 config/costs.py）。
         # 第一版把 0.671% 寫死在腳本裡，那繞過了單一來源，而且無法反映
@@ -226,7 +233,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
 
         per_period.append({"decision_date": str(day.date()),
                            "gross": gross, "cost": cost, "net": gross - cost,
-                           "n_candidates": int(len(common))})
+                           "n_candidates": int(len(ranked))})
         for sid, c in zip(picks, per_name_cost, strict=True):
             adjusted_price = float(opens.loc[entry_day, sid])
             actual_price = float(actual_opens.loc[entry_day, sid])

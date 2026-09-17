@@ -62,7 +62,7 @@ from taiwan_quant.config.costs import (
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
-from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
+from taiwan_quant.data.integrity import select_holding_positions  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -86,6 +86,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 FAMILY = "動能突破"
 HOLDING_DAYS = 40
@@ -151,9 +152,9 @@ def evaluate(
     opens: pd.DataFrame,
     actual_opens: pd.DataFrame,
     closes: pd.DataFrame,
-    forward: pd.DataFrame,
     atr_ratios: pd.DataFrame,
     industries: dict[str, str],
+    delisted_dates: dict[str, date | None],
 ) -> dict:
     """跑一組約束，回傳可比較的彙總"""
     periods: list[dict] = []
@@ -167,21 +168,18 @@ def evaluate(
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        assert_holding_price_completeness(
-            decision_date=day,
-            calendar=calendar,
-            candidates=ranked.index,
-            opens=opens,
-            closes=closes,
-            holding_days=HOLDING_DAYS,
-        )
-        realized = forward.loc[day].dropna()
-        common = ranked.index.intersection(realized.index)
-        if len(common) < MIN_CANDIDATES:
+        if len(ranked) < MIN_CANDIDATES:
             continue
 
+        entry_day = calendar[calendar.index(day) + 1]
         ordered_ids = sorted(
-            common,
+            (
+                sid
+                for sid in ranked.index
+                if sid in opens.columns
+                and np.isfinite(opens.at[entry_day, sid])
+                and opens.at[entry_day, sid] > 0
+            ),
             key=lambda sid: (
                 -float(ranked[sid]),
                 deterministic_jitter(sid, DEFAULT_TIE_SEED),
@@ -211,9 +209,20 @@ def evaluate(
         if not picked:
             continue
 
-        ids = [c.stock_id for c in picked]
-        gross = float(realized[ids].mean())
-        entry_day = calendar[calendar.index(day) + 1]
+        selected = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=[candidate.stock_id for candidate in picked],
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=len(picked),
+            delisted_dates=delisted_dates,
+        )
+        ids = [position.stock_id for position in selected]
+        if not ids:
+            continue
+        gross = float(np.mean([position.gross_return for position in selected]))
         large_members = large_at.get(day, set())
 
         # 兩種資金配置的成本不同：固定 1/N 每檔只有 4 萬（多走零股），
@@ -334,9 +343,9 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
-    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
     atr_ratios = atr_ratio_frame(by_stock)
     industries = load_industries(db_path)
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     warmup = 750
     decision_dates = [
@@ -363,9 +372,9 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
             opens,
             actual_opens,
             closes,
-            forward,
             atr_ratios,
             industries,
+            delisted_dates,
         )
         print(f"  {name} 完成", flush=True)
     return {

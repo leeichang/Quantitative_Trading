@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 
 import pandas as pd
+
+from taiwan_quant.validation.delisting import (
+    MissingPriceKind,
+    settle_holding_period,
+)
 
 
 class DataIntegrityError(RuntimeError):
@@ -24,6 +30,15 @@ class GapRun:
     @property
     def shape(self) -> str:
         return "single" if self.length == 1 else "block"
+
+
+@dataclass(frozen=True)
+class HoldingPosition:
+    """守門後確定會成交且可結算的部位。"""
+
+    stock_id: str
+    gross_return: float
+    kind: MissingPriceKind
 
 
 def find_gap_runs(
@@ -108,3 +123,67 @@ def assert_holding_price_completeness(
         raise DataIntegrityError(
             f"決策日 {decision_date.date()} 的候選價格不完整：" + ", ".join(problems)
         )
+
+
+def select_holding_positions(
+    *,
+    decision_date: pd.Timestamp,
+    calendar: Sequence[pd.Timestamp],
+    ordered_candidates: Iterable[str],
+    opens: pd.DataFrame,
+    closes: pd.DataFrame,
+    holding_days: int,
+    n_positions: int,
+    delisted_dates: Mapping[str, date | None],
+) -> tuple[HoldingPosition, ...]:
+    """依排名選滿 N 檔；共用下市分類，並檢查每個實際遞補者。"""
+    if n_positions < 1:
+        raise ValueError("n_positions 必須至少為 1")
+    dates = list(calendar)
+    try:
+        decision_index = dates.index(decision_date)
+    except ValueError as exc:
+        raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
+
+    entry_index = decision_index + 1
+    target_index = entry_index + holding_days
+    if target_index >= len(dates):
+        raise DataIntegrityError(
+            f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
+        )
+    entry_date = dates[entry_index]
+    target_date = dates[target_index]
+
+    selected: list[HoldingPosition] = []
+    for stock_id in ordered_candidates:
+        if stock_id not in opens.columns or stock_id not in closes.columns:
+            continue
+        bars = pd.concat(
+            [opens[stock_id].rename("open"), closes[stock_id].rename("close")],
+            axis=1,
+        ).dropna(how="all")
+        settlement = settle_holding_period(
+            bars,
+            entry_date=entry_date,
+            target_date=target_date,
+            delisted_date=delisted_dates.get(stock_id),
+        )
+        if settlement.kind is MissingPriceKind.MISSING_ENTRY:
+            continue
+        if settlement.kind is MissingPriceKind.SUSPENDED_OR_MISSING:
+            raise DataIntegrityError(
+                f"決策日 {decision_date.date()} 的實際候選價格不完整："
+                f"{stock_id} {settlement.kind.value} T+H {target_date.date()}"
+            )
+        if settlement.gross_return is None:
+            raise AssertionError("可結算部位缺少 gross_return")
+        selected.append(
+            HoldingPosition(
+                stock_id=stock_id,
+                gross_return=settlement.gross_return,
+                kind=settlement.kind,
+            )
+        )
+        if len(selected) == n_positions:
+            break
+    return tuple(selected)
