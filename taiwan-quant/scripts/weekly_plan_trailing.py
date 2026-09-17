@@ -246,6 +246,16 @@ def main() -> None:
         print(f"未知策略族 {args.family}，可選：{names}")
         return
 
+    # 實測顯示沒有優勢的族不可進推播路徑。族本身留在 STRATEGY_FAMILIES
+    # 裡讓回測與歷史結果可以重現，但這條線硬擋——**不提供繞過開關**，
+    # 要研究它就用 scripts/diagnose_*.py，那些直接取 STRATEGY_FAMILIES。
+    if not family.publishable:
+        print(f"⛔ {family.name} 已停用於推播路徑。")
+        print(f"   依據：{family.unpublishable_reason}")
+        publishable = [f.name for f in STRATEGY_FAMILIES if f.publishable]
+        print(f"   可推播的族：{publishable}")
+        raise SystemExit(1)
+
     as_of = date.fromisoformat(args.as_of)
     train_end = pd.Timestamp(as_of) - pd.Timedelta(days=args.horizon * 2)
 

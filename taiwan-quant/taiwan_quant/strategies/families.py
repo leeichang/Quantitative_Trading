@@ -221,6 +221,21 @@ class StrategyFamily:
 
     description: str
 
+    publishable: bool = True
+    """
+    是否可進入推播路徑。
+
+    `False` 代表**實測顯示它沒有優勢**，不是「還沒驗證」。族本身留在
+    `STRATEGY_FAMILIES` 裡，因為回測與歷史結果的重現需要它——刪掉會讓
+    先前的報告無法重跑（禁令 7、8）。
+
+    推播腳本必須檢查這個欄位並硬拒絕。**不提供繞過開關**：要研究它就用
+    診斷腳本，那些腳本直接取 `STRATEGY_FAMILIES`，不受此限制。
+    """
+
+    unpublishable_reason: str = ""
+    """`publishable=False` 時的實測依據。空字串代表可推播"""
+
     feature_builder: Callable[[pd.DataFrame], pd.DataFrame] = build_technical
     row_scorer: Callable[[pd.Series], float] = _momentum_from_row
     """
@@ -233,6 +248,13 @@ class StrategyFamily:
     兩條路徑**必須給出完全相同的結果**，由
     `test_score_series_matches_score_fn_pointwise` 逐點比對。
     """
+
+    def __post_init__(self) -> None:
+        if not self.publishable and not self.unpublishable_reason.strip():
+            raise ValueError(
+                f"{self.name} 標記為不可推播，但沒有寫實測依據——"
+                "停用一個策略族必須說明為什麼"
+            )
 
     def score_series(self, bars: pd.DataFrame) -> pd.Series:
         """
@@ -283,5 +305,13 @@ STRATEGY_FAMILIES: tuple[StrategyFamily, ...] = (
         description="RSI 超賣 + 觸及布林下軌 + 未跌破 60 日均線",
         feature_builder=build_technical,
         row_scorer=_mean_reversion_from_row,
+        publishable=False,
+        unpublishable_reason=(
+            "2026-09-17 對無資訊對照組實測：淨 +0.49%／趟，落在 200 組"
+            "任意 4 特徵權重組合的第 10 百分位——**比 90% 的任意權重還差**，"
+            "也低於持有全池的 +2.44%。"
+            "依據 ../qlib-tw-trader/docs/原理說明/"
+            "2026-09-17_手工分數對無資訊對照組的重算.md"
+        ),
     ),
 )
