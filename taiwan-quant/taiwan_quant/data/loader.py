@@ -490,10 +490,16 @@ def load_price_views(
         "frozen_reason": frozen_reason,
     }
     adjusted = load_prices(adjusted=True, **common)
-    actual = adjusted[[RAW_OPEN_COLUMN, RAW_CLOSE_COLUMN]].rename(
-        columns={RAW_OPEN_COLUMN: "open", RAW_CLOSE_COLUMN: "close"}
-    )
-    return PriceViews(adjusted=adjusted, actual=actual.copy())
+    # 保留舊 PriceViews.actual 的完整欄位契約，但不做第二次 SQL 查詢。
+    # 還原因子對同一根 OHLC 完全相同，所以可由 raw_close / close 反推
+    # high/low；open/close 則直接使用 loader 在還原前留下的精確原值。
+    actual = adjusted.copy()
+    inverse_adjustment = actual[RAW_CLOSE_COLUMN] / actual["close"]
+    actual["open"] = actual[RAW_OPEN_COLUMN]
+    actual["high"] = actual["high"] * inverse_adjustment
+    actual["low"] = actual["low"] * inverse_adjustment
+    actual["close"] = actual[RAW_CLOSE_COLUMN]
+    return PriceViews(adjusted=adjusted, actual=actual)
 
 
 def _latest_price_date(

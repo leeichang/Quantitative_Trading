@@ -312,6 +312,10 @@ def test_price_views_keep_adjusted_and_actual_prices_separate(fake_db: Path) -> 
 
     assert views.adjusted.loc[key, "close"] == pytest.approx(200.0)
     assert views.actual.loc[key, "close"] == pytest.approx(100.0)
+    assert set(views.actual.columns) == set(views.adjusted.columns)
+    assert views.actual.loc[key, "high"] == pytest.approx(110.0)
+    assert views.actual.loc[key, "low"] == pytest.approx(90.0)
+    assert views.actual.loc[key, "volume"] == views.adjusted.loc[key, "volume"]
     assert views.adjusted is not views.actual
     assert views.adjusted.index.equals(views.actual.index)
 

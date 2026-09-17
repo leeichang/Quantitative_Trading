@@ -41,6 +41,28 @@ def _is_tradeable_quote(row: dict[str, Any]) -> bool:
     return min(values) > 0
 
 
+def _parse_tradeable_row(
+    row: dict[str, Any],
+) -> tuple[float, float, float, float, int] | None:
+    """只有 OHLC 與成交量都明確有效時才允許寫入。"""
+    try:
+        values = (
+            float(row["open"]),
+            float(row["max"]),
+            float(row["min"]),
+            float(row["close"]),
+        )
+        raw_volume = row["Trading_Volume"]
+        if raw_volume is None or str(raw_volume).strip() == "":
+            return None
+        volume = int(raw_volume)
+    except (KeyError, TypeError, ValueError):
+        return None
+    if min(values) <= 0 or volume < 0:
+        return None
+    return (*values, volume)
+
+
 def _repair_prices(
     con: sqlite3.Connection,
     stock_id: str,
@@ -54,18 +76,10 @@ def _repair_prices(
         day = str(row.get("date", ""))
         if day not in expected_dates:
             continue
-        try:
-            open_, high, low, close = (
-                float(row["open"]),
-                float(row["max"]),
-                float(row["min"]),
-                float(row["close"]),
-            )
-            volume = int(row.get("Trading_Volume") or 0)
-        except (KeyError, TypeError, ValueError):
+        parsed = _parse_tradeable_row(row)
+        if parsed is None:
             continue
-        if not _is_tradeable_quote(row):
-            continue
+        open_, high, low, close, volume = parsed
         payload.append(
             (stock_id, day, open_, high, low, close, volume, now)
         )
@@ -149,7 +163,8 @@ def run(
                 source_dates[stock_id] = {
                     str(row.get("date"))
                     for row in result.rows
-                    if row.get("date") is not None and _is_tradeable_quote(row)
+                    if row.get("date") is not None
+                    and _parse_tradeable_row(row) is not None
                 }
                 repaired += _repair_prices(
                     con, stock_id, result.rows, expected_by_stock[stock_id]
