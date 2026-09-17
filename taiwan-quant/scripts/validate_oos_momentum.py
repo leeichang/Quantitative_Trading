@@ -178,17 +178,17 @@ def run(db_path: Path, unlock: bool, reason: str | None,
             tuple(members_at.get(day) or ()), include=include_etfs)
         if not allowed:
             continue
+        ranked = pd.Series(
+            {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
+        ).dropna()
         assert_holding_price_completeness(
             decision_date=day,
             calendar=calendar,
-            candidates=allowed,
+            candidates=ranked.index,
             opens=opens,
             closes=closes,
             holding_days=HOLDING_DAYS,
         )
-        ranked = pd.Series(
-            {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
-        ).dropna()
         realized = forward.loc[day].dropna()
         common = ranked.index.intersection(realized.index)
         if len(common) < MIN_CANDIDATES:

@@ -28,19 +28,6 @@ from taiwan_quant.data.loader import HISTORY_DB_PATH  # noqa: E402
 DEV_END = date(2023, 12, 29)
 
 
-def _is_tradeable_quote(row: dict[str, Any]) -> bool:
-    try:
-        values = (
-            float(row["open"]),
-            float(row["max"]),
-            float(row["min"]),
-            float(row["close"]),
-        )
-    except (KeyError, TypeError, ValueError):
-        return False
-    return min(values) > 0
-
-
 def _parse_tradeable_row(
     row: dict[str, Any],
 ) -> tuple[float, float, float, float, int] | None:
