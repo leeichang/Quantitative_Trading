@@ -67,7 +67,7 @@ from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
     load_chips,
-    load_prices,
+    load_price_views,
 )
 from taiwan_quant.validation.benchmarks import (  # noqa: E402
     equity_curve_statistics,
@@ -145,15 +145,22 @@ def run(db_path: Path, unlock: bool, reason: str | None,
 
     # 從 2015 載入是為了讓 T 日的分數有足夠歷史；分數只用 T 日及之前的資料
     # （物理截斷測試已驗證無 look-ahead），決策日則嚴格限制在 OOS 區間內。
-    prices = load_prices(members, start=date(2015, 1, 1), end=end, adjusted=True,
-                         db_path=db_path, unlock_frozen=unlock, frozen_reason=reason)
+    price_views = load_price_views(
+        members, start=date(2015, 1, 1), end=end, db_path=db_path,
+        unlock_frozen=unlock, frozen_reason=reason,
+    )
     chips = load_chips(members, start=date(2015, 1, 1), end=end, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, prices, chips).by_stock
+    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
+    actual_by_stock = {
+        sid: price_views.actual.xs(sid, level="stock_id")
+        for sid in members if sid in price_views.actual.index.get_level_values("stock_id")
+    }
 
     calendar = V.trading_calendar(by_stock)
     scores = V.precompute_scores(by_stock)[FAMILY]
     opens = build_frame(by_stock, "open", calendar)
+    actual_opens = build_frame(actual_by_stock, "open", calendar)
     closes = build_frame(by_stock, "close", calendar)
     raw_opens = build_frame(by_stock, RAW_OPEN_COLUMN, calendar)
     """實際 T+1 開盤價。只給 `resolve_tier` 判斷整股／零股，不進報酬計算"""
@@ -163,6 +170,9 @@ def run(db_path: Path, unlock: bool, reason: str | None,
     decision_dates = calendar[anchor::DECISION_STRIDE]
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
+    )
+    large_at = V.resolve_members(
+        decision_dates, db_path, 50, UNIVERSE_BASIS
     )
     forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
 
@@ -196,10 +206,16 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         # 門檻上分層錯邊——方向是「看起來買得起整張」，即低估成本。
         # 可負擔性一律用 raw_open（實際 T+1 開盤價），報酬仍用還原價。
         entry_day = calendar[calendar.index(day) + 1]
+        large_members = large_at.get(day, set())
         per_name_cost = []
         for sid in picks:
-            tier = resolve_tier(price=float(raw_opens.loc[entry_day, sid]),
+            adjusted_price = float(opens.loc[entry_day, sid])
+            actual_price = float(actual_opens.loc[entry_day, sid])
+            tier = resolve_tier(
+                                actual_price=actual_price,
+                                adjusted_price=adjusted_price,
                                 amount=CAPITAL / N_POSITIONS,
+                                large=sid in large_members,
                                 is_etf=is_etf(sid))
             per_name_cost.append(DEFAULT_COST.round_trip_rate(tier))
         cost = float(np.mean(per_name_cost))
@@ -208,17 +224,19 @@ def run(db_path: Path, unlock: bool, reason: str | None,
                            "gross": gross, "cost": cost, "net": gross - cost,
                            "n_candidates": int(len(common))})
         for sid, c in zip(picks, per_name_cost, strict=True):
-            tradeable = float(raw_opens.loc[entry_day, sid])
+            adjusted_price = float(opens.loc[entry_day, sid])
+            actual_price = float(actual_opens.loc[entry_day, sid])
             trades.append({"decision_date": str(day.date()), "stock_id": sid,
                            "score": float(ranked[sid]),
                            "gross_return": float(realized[sid]),
-                           # 兩個價格都存：報酬對得上還原價，成本分層
-                           # 對得上實際價，事後可各自稽核
-                           "entry_price_adjusted": float(opens.loc[entry_day, sid]),
-                           "entry_price_tradeable": tradeable,
+                           "entry_price": adjusted_price,
+                           "actual_entry_price": actual_price,
                            "round_trip_cost": c,
                            "tier": resolve_tier(
-                               price=tradeable, amount=CAPITAL / N_POSITIONS,
+                               actual_price=actual_price,
+                               adjusted_price=adjusted_price,
+                               amount=CAPITAL / N_POSITIONS,
+                               large=sid in large_members,
                                is_etf=is_etf(sid)).value,
                            "is_etf": is_etf(sid)})
 

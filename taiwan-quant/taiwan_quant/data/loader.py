@@ -85,6 +85,17 @@ class DataNotAvailableError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class PriceViews:
+    """同一查詢範圍的還原價與實際價；分開保存，禁止混用同一欄位。"""
+
+    adjusted: pd.DataFrame
+    """報酬、特徵與標記使用的還原 OHLC。"""
+
+    actual: pd.DataFrame
+    """成交可負擔性與張／零股判定使用的未還原 OHLC。"""
+
+
+@dataclass(frozen=True)
 class UniverseWarning:
     """標的池的已知偏誤，必須隨報告一起輸出"""
 
@@ -451,6 +462,31 @@ def load_prices(
             raise DataNotAvailableError("剔除缺漏列後無資料可用")
 
     return df.set_index(["stock_id", "date"]).sort_index()
+
+
+def load_price_views(
+    stock_ids: list[str] | None = None,
+    start: date | None = None,
+    end: date | None = None,
+    db_path: Path = DEFAULT_DB_PATH,
+    drop_incomplete: bool = True,
+    unlock_frozen: bool = False,
+    frozen_reason: str | None = None,
+) -> PriceViews:
+    """經同一 loader 守門載入分離的還原價與實際價視圖。"""
+    common = {
+        "stock_ids": stock_ids,
+        "start": start,
+        "end": end,
+        "db_path": db_path,
+        "drop_incomplete": drop_incomplete,
+        "unlock_frozen": unlock_frozen,
+        "frozen_reason": frozen_reason,
+    }
+    return PriceViews(
+        adjusted=load_prices(adjusted=True, **common),
+        actual=load_prices(adjusted=False, **common),
+    )
 
 
 def _latest_price_date(

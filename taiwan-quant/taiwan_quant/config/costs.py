@@ -25,6 +25,7 @@ Dashboard 顯示毛報酬、離線腳本顯示淨報酬，兩套數字不一致�
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -106,13 +107,19 @@ def lot_size() -> int:
 
 
 def resolve_tier(
-    price: float, amount: float, *, large: bool = True, is_etf: bool = False
+    actual_price: float | None,
+    adjusted_price: float,
+    amount: float,
+    *,
+    large: bool = True,
+    is_etf: bool = False,
 ) -> Tier:
     """
     依股價與部位金額決定分層。
 
     Args:
-        price: 每股價格
+        actual_price: 當日未還原的實際每股價格；只用它判斷是否買得起整張
+        adjusted_price: 同日還原價；只供介面明確區隔與稽核，不參與可負擔性
         amount: 這一檔要投入的金額
         large: 是否為 0050 成分股（`False` 視為中型 100）。ETF 時忽略
         is_etf: 標的本身是否為 ETF（不是「ETF 的成分股」）
@@ -121,18 +128,20 @@ def resolve_tier(
         對應的 `Tier`
 
     Raises:
-        ValueError: `price` 或 `amount` 非正
+        ValueError: 任一價格缺漏／非正，或 `amount` 非正
 
     **買得起一整張就用整股滑價，否則用零股。** 這是 D4 零股假設缺的維度：
     40 萬買不起一張台積電是真的，但 265 檔市值池裡有 153 檔（58%）在
     40 萬 × 33% 的上限下買得起整張。
     """
-    if price <= 0:
-        raise ValueError(f"price 必須為正，得到 {price}")
+    if actual_price is None or not math.isfinite(actual_price) or actual_price <= 0:
+        raise ValueError(f"actual_price 必須為正，得到 {actual_price}")
+    if not math.isfinite(adjusted_price) or adjusted_price <= 0:
+        raise ValueError(f"adjusted_price 必須為正，得到 {adjusted_price}")
     if amount <= 0:
         raise ValueError(f"amount 必須為正，得到 {amount}")
 
-    whole = amount >= price * LOT_SIZE
+    whole = amount >= actual_price * LOT_SIZE
     if is_etf:
         return Tier.ETF_WHOLE if whole else Tier.ETF_ODD
     if large:

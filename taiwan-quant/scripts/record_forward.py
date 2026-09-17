@@ -76,6 +76,7 @@ from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_CLOSE_COLUMN,
     load_chips,
+    load_price_views,
     load_prices,
 )
 from taiwan_quant.forward_predictions import (  # noqa: E402
@@ -257,11 +258,13 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
 
     unlock = as_of >= FROZEN_DATA_START
     reason = "record_forward 產生前推預測" if unlock else None
-    prices = load_prices(members, start=date(2015, 1, 1), end=as_of, adjusted=True,
-                         db_path=db_path, unlock_frozen=unlock, frozen_reason=reason)
+    price_views = load_price_views(
+        members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
+        unlock_frozen=unlock, frozen_reason=reason,
+    )
     chips = load_chips(members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, prices, chips).by_stock
+    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     day = calendar[-1]
@@ -271,6 +274,9 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
         tuple(V.resolve_members([day], db_path, UNIVERSE_SIZE, UNIVERSE_BASIS)
               .get(day) or ()),
         include=INCLUDE_ETFS,
+    )
+    large_members = (
+        V.resolve_members([day], db_path, 50, UNIVERSE_BASIS).get(day) or set()
     )
     ranked = pd.Series(
         {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
@@ -311,21 +317,15 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 f"{variant.strategy_version} 在 {day.date()} 選不出任何標的"
             )
         for rank, sid in enumerate(picks, start=1):
-            bars = by_stock[sid]
-            tradeable = float(bars[RAW_CLOSE_COLUMN].loc[day])
-            adjusted = float(bars["close"].loc[day])
-
-            # 決策日當天兩價通常相同（還原錨在載入範圍的最後一天），但
-            # 那是巧合不是保證：換一個 end、或錨定日之後有除權息，就會
-            # 分開。差太多時寧可停下來，不要靜默用錯的價格算成本分層。
-            if adjusted > 0 and abs(tradeable / adjusted - 1) > 0.01:
-                raise RuntimeError(
-                    f"{sid} 在 {day.date()} 的實際價 {tradeable:.2f} 與還原價 "
-                    f"{adjusted:.2f} 差 {abs(tradeable/adjusted-1):.1%}；"
-                    "決策日不該有這個落差，請先確認還原價的錨定日"
-                )
-
-            tier = resolve_tier(price=tradeable, amount=amount, is_etf=is_etf(sid))
+            close = float(by_stock[sid]["close"].loc[day])
+            actual_close = float(price_views.actual.loc[(sid, day), "close"])
+            tier = resolve_tier(
+                actual_price=actual_close,
+                adjusted_price=close,
+                amount=amount,
+                large=sid in large_members,
+                is_etf=is_etf(sid),
+            )
             output.append(ForwardPrediction(
                 predicted_at=predicted_at,
                 data_asof=str(day.date()),
@@ -460,13 +460,11 @@ def main() -> None:
         print(f"── {variant.strategy_version} " + "─" * max(0, 44 - len(variant.strategy_version)))
         print(f"   {variant.note}")
         print(f"{'排名':>4}{'代號':>8}{'分數':>9}{'決策日收盤':>12}"
-              f"{'成本分層':>12}{'來回成本':>10}  產業")
+              f"{'來回成本':>10}  產業")
         print("-" * 70)
         for p in rows:
-            tier = resolve_tier(price=p.entry_price, amount=CAPITAL / N_POSITIONS,
-                                is_etf=is_etf(p.stock_id))
             print(f"{p.rank:>4}{p.stock_id:>8}{p.score:>9.4f}{p.entry_price:>12,.2f}"
-                  f"{tier.value:>12}{p.round_trip_cost*100:>9.3f}%  "
+                  f"{p.round_trip_cost*100:>9.3f}%  "
                   f"{industries.get(p.stock_id, UNCLASSIFIED)}")
         print("-" * 70)
         counts = Counter(industries.get(p.stock_id, UNCLASSIFIED) for p in rows)
