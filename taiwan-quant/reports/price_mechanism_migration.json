@@ -1,0 +1,15 @@
+{
+  "canonical_mechanism": "single_adjusted_frame_with_raw_open_raw_close",
+  "sql_loads_per_request": 1,
+  "deprecated_api": "load_price_views",
+  "migrated_call_sites": [
+    "scripts/validate_oos_momentum.py",
+    "scripts/diagnose_position_costs.py",
+    "scripts/diagnose_constraints.py",
+    "scripts/diagnose_delistings.py"
+  ],
+  "main_side_migration_needed": [
+    "scripts/record_forward.py"
+  ],
+  "reason": "同一索引同時攜帶還原價與實際成交價，消除雙次查詢與索引漂移"
+}
