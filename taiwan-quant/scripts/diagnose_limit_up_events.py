@@ -79,6 +79,14 @@ UNIVERSE_SIZE = 150
 UNIVERSE_BASIS = "market_cap"
 WARMUP = 750
 
+LARGE_TIER_SIZE = 50
+"""
+市值前 50 名視為 0050 級（滑價 0.3%），51~150 走中型 100（0.4%）。
+
+禁令 4 的明文分層。第一版全部走 `resolve_tier` 的預設 `large=True`，
+把排名 51~150 的名字也套 0.3%，低估成本。
+"""
+
 N_POSITIONS = 3
 """
 固定 3 檔。
@@ -138,6 +146,7 @@ def simulate(
     calendar: list[pd.Timestamp],
     score_frame: pd.DataFrame,
     members_at: dict,
+    large_at: dict,
     opens: pd.DataFrame,
     raw_opens: pd.DataFrame,
     closes: pd.DataFrame,
@@ -151,7 +160,6 @@ def simulate(
     這是事件驅動策略的真實代價，用「每趟平均」會完全看不到。
     """
     thresholds = expanding_thresholds(score_frame, quantile)
-    amount = CAPITAL / N_POSITIONS
 
     cash = CAPITAL
     holdings: list[dict] = []
@@ -201,6 +209,7 @@ def simulate(
                                      deterministic_jitter(sid, DEFAULT_TIE_SEED)),
                 )
                 entry_day = calendar[index + 1]
+                large_members = large_at.get(day, set())
                 for stock_id in ordered:
                     if len(holdings) >= N_POSITIONS or stock_id in held:
                         continue
@@ -213,10 +222,28 @@ def simulate(
                     if not (np.isfinite(entry_price) and entry_price > 0
                             and np.isfinite(tradeable) and tradeable > 0):
                         continue
-                    if cash < amount:
+                    # 部位大小 = 可用現金 ÷ 剩餘空槓位。
+                    #
+                    # 第一版用固定的 `CAPITAL / N_POSITIONS`，並在
+                    # `cash < amount` 時跳過。400,000 / 3 = 133,333.33，
+                    # 所以 3 × amount **恰好等於**初始資金——任何一點虧損
+                    # 都讓第三個槓位永久填不滿。
+                    #
+                    # 實測那個刀鋒效應會主導結果：成本從 0.865% 改成
+                    # 0.940%（只差 0.075 pp）就讓 q=0.99/H=40 的交易數
+                    # 63 → 75、毛報酬 4.34% → 6.31%。那是路徑分岔，
+                    # 不是策略差異。
+                    free_slots = N_POSITIONS - len(holdings)
+                    amount = cash / free_slots
+                    if amount <= 0:
                         continue
-                    tier = resolve_tier(price=float(tradeable), amount=amount,
-                                        is_etf=is_etf(stock_id))
+                    tier = resolve_tier(
+                        actual_price=float(tradeable),
+                        adjusted_price=float(entry_price),
+                        amount=amount,
+                        large=stock_id in large_members,
+                        is_etf=is_etf(stock_id),
+                    )
                     cash -= amount
                     holdings.append({
                         "stock_id": stock_id,
@@ -409,6 +436,9 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     members_at = V.resolve_members(
         calendar[WARMUP:], db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
     )
+    large_at = V.resolve_members(
+        calendar[WARMUP:], db_path, LARGE_TIER_SIZE, UNIVERSE_BASIS
+    )
 
     hits_cache = {h: hit_within(events, h) for h in HORIZON_GRID}
 
@@ -416,7 +446,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     for quantile in QUANTILE_GRID:
         for horizon in HORIZON_GRID:
             grid.append(simulate(
-                quantile, horizon, calendar, score_frame, members_at,
+                quantile, horizon, calendar, score_frame, members_at, large_at,
                 opens, raw_opens, closes, hits_cache[horizon], locked,
             ))
         print(f"  q={quantile} 完成", flush=True)

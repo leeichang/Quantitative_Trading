@@ -89,6 +89,15 @@ FAMILY = "動能突破"
 CAPITAL = 400_000.0
 UNIVERSE_SIZE = 150
 UNIVERSE_BASIS = "market_cap"
+
+LARGE_TIER_SIZE = 50
+"""
+市值前 50 名視為 0050 級（滑價 0.3%），51~150 視為中型 100（0.4%）。
+
+禁令 4 的明文分層。第一版全部走 `resolve_tier` 的預設 `large=True`，
+於是排名 51~150 的名字也被套 0.3%——**那份成本地板表的每一格都低估
+了成本**。這是 Codex 在平行做同一個任務時抓到的。
+"""
 MIN_CANDIDATES = 30
 WARMUP = 750
 
@@ -111,6 +120,8 @@ def sweep(
     calendar: list[pd.Timestamp],
     scores: dict[str, dict],
     members_at_cache: dict[int, dict],
+    large_at_cache: dict[int, dict],
+    opens: pd.DataFrame,
     raw_opens: pd.DataFrame,
     forward_cache: dict[int, pd.DataFrame],
     cost: CostModel,
@@ -124,6 +135,7 @@ def sweep(
     amount = CAPITAL / n_positions
     forward = forward_cache[holding_days]
     members_at = members_at_cache[holding_days]
+    large_at = large_at_cache[holding_days]
     decision_dates = [
         day
         for day in calendar[WARMUP::holding_days]
@@ -154,12 +166,24 @@ def sweep(
         )[:n_positions]
 
         entry_day = calendar[calendar.index(day) + 1]
+        large_members = large_at.get(day, set())
         rates, whole = [], 0
         for sid in picks:
-            price = float(raw_opens.loc[entry_day, sid])
-            if not np.isfinite(price) or price <= 0:
+            actual = float(raw_opens.loc[entry_day, sid])
+            adjusted = float(opens.loc[entry_day, sid])
+            if not (np.isfinite(actual) and actual > 0
+                    and np.isfinite(adjusted) and adjusted > 0):
                 continue
-            tier = resolve_tier(price=price, amount=amount, is_etf=is_etf(sid))
+            tier = resolve_tier(
+                actual_price=actual,
+                adjusted_price=adjusted,
+                amount=amount,
+                # 禁令 4：0050 成分股 0.3%、中型 100 為 0.4%。
+                # 第一版全部走預設的 large=True，等於把排名 51~150 的
+                # 名字也套 0.3%——**每一格的成本都被低估**。
+                large=sid in large_members,
+                is_etf=is_etf(sid),
+            )
             # 絕對金額 ÷ 金額 才含最低手續費；round_trip_rate() 明文忽略它
             rates.append(cost.round_trip_cost(amount, tier) / amount)
             whole += tier in (Tier.LARGE_WHOLE, Tier.MID_WHOLE, Tier.ETF_WHOLE)
@@ -334,7 +358,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     opens, closes = frame("open"), frame("close")
     raw_opens = frame(RAW_OPEN_COLUMN)
 
-    forward_cache, members_at_cache = {}, {}
+    forward_cache, members_at_cache, large_at_cache = {}, {}, {}
     for horizon in H_GRID:
         forward_cache[horizon] = closes.shift(-horizon) / opens.shift(-1) - 1
         dates = [
@@ -345,12 +369,17 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
         members_at_cache[horizon] = V.resolve_members(
             dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
         )
+        # 市值前 50 才是 0050 級（滑價 0.3%），其餘走中型 100（0.4%）
+        large_at_cache[horizon] = V.resolve_members(
+            dates, db_path, LARGE_TIER_SIZE, UNIVERSE_BASIS
+        )
 
     grid = []
     for n_positions in N_GRID:
         for horizon in H_GRID:
             item = sweep(n_positions, horizon, calendar, scores, members_at_cache,
-                         raw_opens, forward_cache, DEFAULT_COST, include_etfs=False)
+                         large_at_cache, opens, raw_opens, forward_cache,
+                         DEFAULT_COST, include_etfs=False)
             if item is not None:
                 grid.append(item)
         print(f"  N={n_positions} 完成", flush=True)
@@ -358,8 +387,8 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     discounts = []
     for discount in DISCOUNT_GRID:
         item = sweep(CURRENT_N, CURRENT_H, calendar, scores, members_at_cache,
-                     raw_opens, forward_cache, CostModel(fee_discount=discount),
-                     include_etfs=False)
+                     large_at_cache, opens, raw_opens, forward_cache,
+                     CostModel(fee_discount=discount), include_etfs=False)
         if item is not None:
             discounts.append({"discount": discount,
                               "cost_per_trip": item["cost_per_trip"]})
@@ -373,7 +402,8 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     etf = []
     for include in (False, True):
         item = sweep(CURRENT_N, CURRENT_H, calendar, scores, members_at_cache,
-                     raw_opens, forward_cache, DEFAULT_COST, include_etfs=include)
+                     large_at_cache, opens, raw_opens, forward_cache,
+                     DEFAULT_COST, include_etfs=include)
         if item is not None:
             etf.append({"include_etfs": include,
                         "whole_ratio": item["whole_ratio"],
