@@ -54,6 +54,7 @@ import argparse
 import json
 import sqlite3
 import sys
+from collections.abc import Iterable
 from datetime import date, datetime
 from pathlib import Path
 
@@ -120,6 +121,16 @@ ROUND_TRIP = DEFAULT_COST.round_trip_rate(REFERENCE_TIER)
 OOS_START = date(2024, 1, 1)
 DEV_END = date(2023, 12, 29)
 STRATEGY_VERSION = "momentum_top10_h40@oos-2026-09-16"
+
+
+def randomized_candidates(
+    candidates: Iterable[str],
+    rng: np.random.Generator,
+) -> list[str]:
+    """先建立穩定初始順序，再隨機排列，避免 set hash 破壞固定 seed。"""
+    ordered = sorted(candidates)
+    rng.shuffle(ordered)
+    return ordered
 
 
 def build_frame(
@@ -284,8 +295,7 @@ def run(db_path: Path, unlock: bool, reason: str | None,
             allowed = members_at.get(day)
             if not allowed:
                 continue
-            randomized = list(allowed)
-            rng.shuffle(randomized)
+            randomized = randomized_candidates(allowed, rng)
             selected = select_holding_positions(
                 decision_date=day,
                 calendar=calendar,
