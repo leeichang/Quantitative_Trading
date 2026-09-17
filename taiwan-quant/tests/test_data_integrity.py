@@ -11,7 +11,9 @@ from taiwan_quant.data.dataset import build_dataset
 from taiwan_quant.data.integrity import (
     DataIntegrityError,
     assert_holding_price_completeness,
+    complete_holding_decision_dates,
     find_gap_runs,
+    holding_dates,
     select_holding_positions,
 )
 
@@ -85,9 +87,7 @@ def test_holding_price_guard_rejects_missing_exit_instead_of_dropna() -> None:
 def test_selection_guard_exits_at_decision_plus_h_not_entry_plus_h() -> None:
     calendar = list(pd.date_range("2023-01-02", periods=5, freq="B"))
     opens = pd.DataFrame({"A": [99.0, 100.0, 101.0, 102.0, 103.0]}, index=calendar)
-    closes = pd.DataFrame(
-        {"A": [99.0, 100.0, 101.0, 110.0, float("nan")]}, index=calendar
-    )
+    closes = pd.DataFrame({"A": [99.0, 100.0, 101.0, 110.0, float("nan")]}, index=calendar)
 
     selected = select_holding_positions(
         decision_date=calendar[0],
@@ -102,6 +102,22 @@ def test_selection_guard_exits_at_decision_plus_h_not_entry_plus_h() -> None:
 
     # T+1 以 100 進場、T+3 以 110 出場；不可錯查 T+4 的 NaN。
     assert selected[0].gross_return == pytest.approx(0.10)
+
+
+@pytest.mark.unit
+def test_holding_dates_and_tail_filter_share_t_plus_h_boundary() -> None:
+    calendar = list(pd.date_range("2023-01-02", periods=6, freq="B"))
+
+    entry, target = holding_dates(calendar[1], calendar, holding_days=3)
+    kept = complete_holding_decision_dates(
+        calendar,
+        [calendar[0], calendar[1], calendar[2], calendar[3]],
+        holding_days=3,
+    )
+
+    assert entry == calendar[2]
+    assert target == calendar[4]
+    assert kept == [calendar[0], calendar[1], calendar[2]]
 
 
 @pytest.mark.unit
@@ -124,6 +140,43 @@ def test_selection_guard_allows_delisted_position_with_policy_b_return() -> None
     assert [position.stock_id for position in selected] == ["A"]
     assert selected[0].gross_return == pytest.approx(-0.20)
     assert selected[0].kind.value == "delisted"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("stock_id", "decision", "entry", "last_trade", "target", "delisted"),
+    [
+        ("3474", "2016-11-09", "2016-11-10", "2016-12-05", "2017-01-06", date(2016, 12, 6)),
+        ("2325", "2018-03-30", "2018-04-02", "2018-04-27", "2018-05-31", date(2018, 4, 30)),
+        ("2311", "2018-03-30", "2018-04-02", "2018-04-27", "2018-05-31", date(2018, 4, 30)),
+    ],
+)
+def test_known_delistings_do_not_trip_integrity_guard(
+    stock_id: str,
+    decision: str,
+    entry: str,
+    last_trade: str,
+    target: str,
+    delisted: date,
+) -> None:
+    calendar = list(pd.to_datetime([decision, entry, last_trade, target]))
+    opens = pd.DataFrame({stock_id: [99.0, 100.0, 82.0, float("nan")]}, index=calendar)
+    closes = pd.DataFrame({stock_id: [99.0, 100.0, 80.0, float("nan")]}, index=calendar)
+
+    selected = select_holding_positions(
+        decision_date=calendar[0],
+        calendar=calendar,
+        ordered_candidates=[stock_id],
+        opens=opens,
+        closes=closes,
+        holding_days=3,
+        n_positions=1,
+        delisted_dates={stock_id: delisted},
+    )
+
+    assert selected[0].stock_id == stock_id
+    assert selected[0].kind.value == "delisted"
+    assert selected[0].gross_return == pytest.approx(-0.20)
 
 
 @pytest.mark.unit
