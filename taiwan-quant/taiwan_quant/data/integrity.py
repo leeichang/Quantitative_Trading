@@ -105,7 +105,7 @@ def assert_holding_price_completeness(
         raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
 
     entry_index = decision_index + 1
-    exit_index = entry_index + holding_days
+    exit_index = decision_index + holding_days
     if exit_index >= len(dates):
         raise DataIntegrityError(
             f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
@@ -146,7 +146,7 @@ def select_holding_positions(
         raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
 
     entry_index = decision_index + 1
-    target_index = entry_index + holding_days
+    target_index = decision_index + holding_days
     if target_index >= len(dates):
         raise DataIntegrityError(
             f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
