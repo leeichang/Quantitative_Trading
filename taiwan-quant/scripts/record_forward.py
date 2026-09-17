@@ -76,7 +76,6 @@ from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_CLOSE_COLUMN,
     load_chips,
-    load_price_views,
     load_prices,
 )
 from taiwan_quant.forward_predictions import (  # noqa: E402
@@ -258,13 +257,21 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
 
     unlock = as_of >= FROZEN_DATA_START
     reason = "record_forward 產生前推預測" if unlock else None
-    price_views = load_price_views(
-        members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
-        unlock_frozen=unlock, frozen_reason=reason,
+    # 單一價格框架：`load_prices(adjusted=True)` 的同一個 DataFrame 裡
+    # 就帶著 `raw_open` / `raw_close`，不需要第二次查詢。
+    #
+    # 先前這裡用已棄用的 `load_price_views`，並在下方以
+    # `price_views.actual.loc[(sid, day), "close"]` 取實際價。兩個 frame
+    # 各自套用 `drop_incomplete`，索引可能分歧——而 `.loc` 對不上時
+    # 是 KeyError 或錯位，不是警告。改用同框架的 `RAW_CLOSE_COLUMN`
+    # 之後那個風險在結構上消失。
+    prices = load_prices(
+        members, start=date(2015, 1, 1), end=as_of, adjusted=True,
+        db_path=db_path, unlock_frozen=unlock, frozen_reason=reason,
     )
     chips = load_chips(members, start=date(2015, 1, 1), end=as_of, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
+    by_stock = build_dataset(members, prices, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     day = calendar[-1]
@@ -317,11 +324,24 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 f"{variant.strategy_version} 在 {day.date()} 選不出任何標的"
             )
         for rank, sid in enumerate(picks, start=1):
-            close = float(by_stock[sid]["close"].loc[day])
-            actual_close = float(price_views.actual.loc[(sid, day), "close"])
+            bars = by_stock[sid]
+            adjusted_close = float(bars["close"].loc[day])
+            actual_close = float(bars[RAW_CLOSE_COLUMN].loc[day])
+
+            # 決策日當天兩價通常相同（還原錨在載入範圍的最後一天），但
+            # 那是巧合不是保證：換一個 end、或錨定日之後有除權息，就會
+            # 分開。差太多時寧可停下來，不要靜默用錯的價格算成本分層。
+            if adjusted_close > 0 and abs(actual_close / adjusted_close - 1) > 0.01:
+                raise RuntimeError(
+                    f"{sid} 在 {day.date()} 的實際價 {actual_close:.2f} 與還原價 "
+                    f"{adjusted_close:.2f} 差 "
+                    f"{abs(actual_close / adjusted_close - 1):.1%}；"
+                    "決策日不該有這個落差，請先確認還原價的錨定日"
+                )
+
             tier = resolve_tier(
                 actual_price=actual_close,
-                adjusted_price=close,
+                adjusted_price=adjusted_close,
                 amount=amount,
                 large=sid in large_members,
                 is_etf=is_etf(sid),
@@ -337,7 +357,7 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
                 # 實際價，不是還原價——這是使用者拿去下單看的數字。
                 # 結算不用它（用真正的 T+1 開盤重算），所以它純粹是稽核
                 # 與可讀性用。
-                entry_price=tradeable,
+                entry_price=actual_close,
                 due_date=due.isoformat(),
                 round_trip_cost=DEFAULT_COST.round_trip_rate(tier),
             ))
