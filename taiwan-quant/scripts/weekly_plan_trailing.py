@@ -69,6 +69,7 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_return_calibrator,
     return_reliability_report,
 )
+from taiwan_quant.config.env import load_env  # noqa: E402
 
 STRATEGY_VERSION = "trailing_stop_portfolio@v0.1.0"
 
@@ -239,6 +240,12 @@ def main() -> None:
     parser.add_argument("--as-of", default="2026-09-11")
     parser.add_argument("--send", action="store_true", help="實際推播")
     args = parser.parse_args()
+
+    # `.env` 只在這裡載入一次。沒有它 os.environ 讀不到檔案內容，
+    # 而 token 讀不到時會**靜默**走匿名層（額度被砍但不報錯）。
+    status = load_env()
+    for line in status.describe():
+        print(f"[env] {line}")
 
     family = next((f for f in STRATEGY_FAMILIES if f.name == args.family), None)
     if family is None:

@@ -48,15 +48,14 @@ MAX_MESSAGE_LENGTH = 4096
 
 REQUEST_TIMEOUT = 30.0
 
-PLACEHOLDER_VALUES = frozenset({
-    "",
-    "your_token_here",
-    "YOUR_TELEGRAM_BOT_TOKEN",
-    "YOUR_CHAT_ID",
-    "xxx",
-})
+from taiwan_quant.config.env import PLACEHOLDER_VALUES  # noqa: E402
+
 """
-`.env.example` 的佔位字串。
+佔位字串由 `config/env.py` 統一提供。
+
+原本這裡有自己的一份，而兩份不一致（這裡擋 `YOUR_CHAT_ID` 與 `xxx`，
+env 那邊沒有）——同一個佔位字串在一處被擋、在另一處放行。
+收斂成一份之後不可能再分岔。
 
 不擋掉的話，使用者會以為設定好了，實際推播到不存在的 bot。
 """

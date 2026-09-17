@@ -73,6 +73,8 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from taiwan_quant.config.env import load_env  # noqa: E402
+
 DB_PATH = Path(__file__).resolve().parents[1] / "data" / "history.db"
 
 API = "https://api.finmindtrade.com/api/v4/data"
@@ -565,6 +567,13 @@ def main() -> None:
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--db", default=str(DB_PATH))
     args = parser.parse_args()
+
+    # `.env` 只在這裡載入一次。沒有它 os.environ 讀不到檔案內容，
+    # 而 token 讀不到時 `api_token()` 會回 None 並**靜默**走匿名層
+    # ——額度被砍但不會有任何訊息。
+    status = load_env()
+    for line in status.describe():
+        print(f"[env] {line}")
 
     db_path = Path(args.db)
     db_path.parent.mkdir(parents=True, exist_ok=True)

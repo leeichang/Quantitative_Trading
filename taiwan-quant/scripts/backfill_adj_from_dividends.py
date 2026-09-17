@@ -78,6 +78,7 @@ from taiwan_quant.data.adjustment import (  # noqa: E402
     back_adjust,
     events_from_dividend_result,
 )
+from taiwan_quant.config.env import load_env  # noqa: E402
 
 DB_PATH = Path(__file__).resolve().parents[1] / "data" / "history.db"
 
@@ -235,6 +236,12 @@ def main() -> None:
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--db", default=str(DB_PATH))
     args = parser.parse_args()
+
+    # `.env` 只在這裡載入一次。沒有它 os.environ 讀不到檔案內容，
+    # 而 token 讀不到時會**靜默**走匿名層（額度被砍但不報錯）。
+    status = load_env()
+    for line in status.describe():
+        print(f"[env] {line}")
 
     con = sqlite3.connect(Path(args.db), timeout=30)
     ensure_schema(con)

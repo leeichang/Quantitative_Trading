@@ -99,3 +99,10 @@ frontend/dist/
 # 前面的斜線是必要的：沒有它會連 taiwan_quant/validation/external/ 一起擋掉，
 # 而那裡放的是要納入版控的 vendored 程式碼
 /external/
+
+# hook 產生的暫存檔。`.pending-auth-captures.jsonl` 可能含憑證片段，
+# 絕不提交。`.planning/HANDOFF.json` 是刻意追蹤的，不受這條影響。
+#
+# 必須用 `**/` 前綴：含斜線的樣式會被錨定在本檔所在目錄，
+# `.planning/.pending-*` 只會匹配 repo 根目錄那一層。
+**/.planning/.pending-*

@@ -52,6 +52,7 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_calibrator,
     reliability_report,
 )
+from taiwan_quant.config.env import load_env  # noqa: E402
 
 STRATEGY_VERSION = "momentum_baseline_tb5d@v0.2.0"
 
@@ -269,6 +270,12 @@ def main() -> None:
     parser.add_argument("--send", action="store_true", help="實際推播（預設 dry-run）")
     parser.add_argument("--limit", type=int, default=60, help="最多處理幾檔")
     args = parser.parse_args()
+
+    # `.env` 只在這裡載入一次。沒有它 os.environ 讀不到檔案內容，
+    # 而 token 讀不到時會**靜默**走匿名層（額度被砍但不報錯）。
+    status = load_env()
+    for line in status.describe():
+        print(f"[env] {line}")
 
     print("=" * 72)
     print("週頻交易計畫產生器")
