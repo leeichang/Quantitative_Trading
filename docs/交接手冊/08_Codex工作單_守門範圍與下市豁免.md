@@ -197,57 +197,176 @@ left-join 改動造成的分數位移，與你報的 +0.27 pp 同一個來源。
 
 ---
 
-## 任務 Q：守門接線的一致性（次要，但要有決定）
+## 任務 Q
 
-10 支腳本裡只有 3 支有守門。這不是錯，但**必須是一個明確的決定而不是
-遺漏**。
-
-請在說明文件裡寫清楚分類，並讓實際接線與它一致：
-
-| 類別 | 是否需要守門 | 理由 |
-|---|---|---|
-| 會產生可推播結果的 | 需要 | 例：`record_forward.py` |
-| 一次性 OOS 驗證 | 需要 | 例：`validate_oos_momentum.py` |
-| 純診斷／掃描 | ？ | 由你判斷並寫理由 |
-
-⚠️ `record_forward.py` 是**主線負責**的檔案（見檔案分工），你只要在
-文件裡寫「它應該接守門」，不要代改。
+已併入**任務 U**（見第三部分）。分工在本工作單修訂後全部交給你，
+所以 `record_forward.py` 的守門接線可以直接做，不必只寫在文件裡。
 
 ---
 
-## 檔案分工
+## 檔案分工（2026-09-17 修訂：全部交給你）
 
-### 你可以動
+使用者決定把主線的工作也交給你，所以**這張工作單之後沒有「主線獨占」
+檔案**。整個 repo 你都可以動。
+
+前一版的分工清單作廢。
+
+### 交接前主線已完成的收尾
+
+`scripts/record_forward.py` 已遷移到單一價格框架，並修掉合併留下的
+兩個懸空參照（`7e5890d`）。詳情見「第二部分」——**那個 bug 與你的
+守門缺陷是同一個成因**，值得一起讀。
+
+### 你現在同時擁有兩邊，所以這條規矩更重要
+
+沒有人會再撞你的車，但也沒有人會再替你發現「腳本改了沒跑過」。
+**驗收的第一項永遠是真實輸出。**
+
+---
+
+## 第二部分：主線剛犯了跟你一樣的錯，值得一起讀
+
+遷移 `record_forward.py` 時我踩到完全相同的失敗模式。
+
+### 現象
+
+合併之後 `record_forward.py` **第一檔就 NameError**：
+
+```python
+actual_close = float(price_views.actual.loc[(sid, day), "close"])   # price_views 已被移除
+...
+entry_price=tradeable,                                              # tradeable 從未定義
+```
+
+`tradeable` 連定義都不存在——連同計算它的區塊與 1% 還原／實際價落差
+守門，一起在衝突解決時消失了。
+
+**於是唯一在產出真實前推證據的腳本，從合併之後就不能跑。**
+
+### 而測試全綠
 
 ```
-taiwan_quant/data/integrity.py
-taiwan_quant/validation/delisting.py
-taiwan_quant/data/loader.py
-taiwan_quant/data/dataset.py
-scripts/diagnose_constraints.py
-scripts/diagnose_position_costs.py
-scripts/diagnose_delistings.py
-scripts/validate_oos_momentum.py
-任何新檔案與對應測試
+864 passed
 ```
 
-### 主線獨占，請不要動
+腳本不在測試覆蓋內。**我在寫「你改了腳本沒跑過」這張工作單的同時，
+犯了同一件事。** 是 `--dry-run` 抓到的，測試永遠不會。
+
+### 結論對我們兩邊都適用
 
 ```
-scripts/record_forward.py                    ← 仍用 load_price_views，主線會遷移
-scripts/diagnose_cost_floor.py
-scripts/diagnose_limit_up_events.py
-scripts/validate_hand_scores_vs_uninformed.py
-scripts/validate_lgbm_baseline.py
-scripts/validate_etf_rotation.py
-taiwan_quant/labeling/limit_up.py
-taiwan_quant/models/lgbm_baseline.py
-taiwan_quant/validation/uninformed.py
-taiwan_quant/ranking/etf_rotation.py
-taiwan_quant/strategies/families.py          ← publishable 旗標剛改過
+單元測試通過   ≠   腳本能跑
+腳本能跑       ≠   兩條分支（--dry-run / --settle）都能跑
 ```
 
-若任務 P 的介面改動會影響主線獨占的檔案，**列清單不代改**。
+我最後是跑了 `--dry-run`（兩個版本）與 `--settle` 才確認。
+**改動的每一支腳本、每一條主要分支都要實際執行。**
+
+---
+
+## 第三部分：主線交接過來的待辦
+
+以下原本是主線的工作，現在是你的。**優先度都低於任務 P**——
+守門修好之前這些跑出來的數字沒有一致的基準。
+
+### 任務 R：重跑清單（守門修好後）
+
+`reports/` 底下多數開發集結果建立在舊資料與舊成本分層上。
+任務 P 完成後全部重跑：
+
+| 報告 | 來源腳本 | 預期影響 |
+|---|---|---|
+| `constraint_cost_dev.json` | `diagnose_constraints.py` | 高（候選集變） |
+| `cost_floor_dev.json` | `diagnose_cost_floor.py` | 高 |
+| `limit_up_events_dev.json` | `diagnose_limit_up_events.py` | 高 |
+| `lgbm_baseline_dev.json` | `validate_lgbm_baseline.py` | 高（訓練集變） |
+| `hand_vs_uninformed_dev.json` | `validate_hand_scores_vs_uninformed.py` | **最高** |
+| `position_cost_dev.json` | `diagnose_position_costs.py` | 高 |
+| `delisting_policy_dev.json` | `diagnose_delistings.py` | 高 |
+| `etf_rotation_dev.json` | `validate_etf_rotation.py` | **無**（見下） |
+
+ETF 輪動豁免已實測確認：
+
+```
+0056   開發集期間缺 0 天
+0050   缺 5 天（2025-06-11 ~ 06-17，開發集結束之後）
+```
+
+⚠️ 那 5 天緊接在 **0050 於 2025-06-18 的 1:4 分割之前**，而
+`loader._apply_adjustment` 的說明記錄過同一檔缺 11 天還原價造成
+84.20% 假回撤。**可能是同一個成因，值得一起查。**
+
+#### 會被推翻的結論
+
+```
+投組約束的代價量不出來（t = −1.11）
+成本地板 0.799%（N=3, H=120）與現行 1.081%（N=10, H=40）
+週頻漲停淨 −0.97%／趟
+LightGBM 與手工分數無法區分（t = 0.07）
+動能突破在無資訊對照組的第 98 百分位、配對 t = 0.99
+均值回歸在第 10 百分位
+```
+
+⚠️ **最後一項最重要。** `strategies/families.py` 把均值回歸標記為
+`publishable=False`，依據就是那個第 10 百分位。若重跑後它變了：
+
+```
+變好   更新 unpublishable_reason 的數字，或撤銷停用
+仍差   更新數字即可
+```
+
+`__post_init__` 會在 `publishable=False` 而理由為空時拋錯，所以不可能
+悄悄留下一個沒有依據的停用。
+
+### 任務 S：解釋為什麼標籤打亂比隨機權重更嚴格（目前是推測）
+
+實測兩個無資訊對照組的強度不同：
+
+```
+純隨機選股                  淨/趟中位 +1.05%
+稀疏隨機權重（4~6 特徵）     +1.58%
+標籤打亂的 LightGBM         +2.94%    ← 最嚴格
+```
+
+主線的**推測（未驗證）**：LightGBM 即使在打亂的標籤上，樹仍會沿著特徵
+分布有結構的軸切分，預測值因此與「特徵極端程度」相關；而在這個標的池
+裡特徵極端的名字表現較好，所以打亂的模型繼承了一個**具體**的傾斜，
+而隨機線性權重給的是**瀰散**的傾斜。
+
+要確認需要比較兩者選出的名字分布。
+
+**這件事的用途**：CLAUDE.md 現在要求「有多種構造時用最嚴格的那個」。
+若能說明為什麼，就能預測哪一種構造對新策略才是對的門檻，而不是每次
+都要跑兩套。
+
+### 任務 T：兩個負相關 sleeve 的 Sharpe
+
+實測三族的橫斷面關係：
+
+```
+配對                  Spearman 中位   前 10 重疊中位   完全不重疊的期數
+動能突破 / 均值回歸        −0.505            0          34/36
+籌碼跟隨 / 均值回歸        −0.320            0          28/36
+動能突破 / 籌碼跟隨        +0.526            3           3/36
+```
+
+**排名平均已被否定**（兩個相反排序平均到分布中段，而中段是最差區域：
+50~80% 桶的 5 日漲停率 0.62%，低於最低 50% 的 0.83%）。
+
+但 −0.505 還有另一個用途：**兩個 sleeve 各半資金**。降低投組變異不需要
+任何一邊變強。
+
+⚠️ **代價是稀釋**：均值回歸年化淨 5.2%、籌碼跟隨 12.3%，都遠弱於動能
+突破。Sharpe 會不會改善是可測的，尚未測。
+
+⚠️ 均值回歸已 `publishable=False`。做這個測試時**不要**為了跑通而把
+旗標改掉——診斷腳本直接取 `STRATEGY_FAMILIES`，不受旗標限制。
+
+### 任務 U：守門接線的一致性
+
+原任務 Q，內容不變。10 支腳本只有 3 支有守門，這要是一個明確決定
+而不是遺漏。`record_forward.py` 現在也是你的，所以「它應該接守門」
+這件事可以直接做，不用只寫在文件裡。
 
 ---
 
@@ -314,7 +433,7 @@ OOS      2024-01 ~ 2026-09-11    已經用掉，不可再跑
 ✗ 在 integrity.py 裡寫第二份下市判斷（要呼叫 delisting.py）
 ✗ 給守門加繞過開關
 ✗ 就地改寫已發佈的報告數字（禁令 9，要加註）
-✗ 動「主線獨占」清單裡的檔案
+✗ 為了讓任務 T 跑通而改掉 families.publishable 旗標
 ✗ 開新分支或合併到 main
 ```
 
@@ -327,6 +446,11 @@ OOS      2024-01 ~ 2026-09-11    已經用掉，不可再跑
 □ 守門仍會觸發的證明案例
 □ 一份 qlib-tw-trader/docs/原理說明/ 的說明文件，檔名含日期
 □ 測試數與變化（目前 864 passed）
+□ 任務 R 重跑後：哪些數字變了、變多少，逐項列出
 □ 起點 commit SHA
 □ 自我審查：這次改動有沒有讓任何數字往「變好看」的方向動？
+  如果有，那個方向是不是有獨立證據支持？
 ```
+
+前 14 個抓到的 bug 裡大部分是「讓結果變好看」的方向被抓出來的。
+**先自己問這個問題，比等人來問便宜。**
