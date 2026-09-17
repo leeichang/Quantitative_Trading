@@ -26,6 +26,7 @@ from __future__ import annotations
 import inspect
 import json
 import sqlite3
+import warnings
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -473,7 +474,12 @@ def load_price_views(
     unlock_frozen: bool = False,
     frozen_reason: str | None = None,
 ) -> PriceViews:
-    """經同一 loader 守門載入分離的還原價與實際價視圖。"""
+    """已棄用的相容介面；由單一價格框架衍生實際開收盤視圖。"""
+    warnings.warn(
+        "load_price_views 已棄用；請使用 load_prices 的 raw_open / raw_close",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     common = {
         "stock_ids": stock_ids,
         "start": start,
@@ -483,10 +489,17 @@ def load_price_views(
         "unlock_frozen": unlock_frozen,
         "frozen_reason": frozen_reason,
     }
-    return PriceViews(
-        adjusted=load_prices(adjusted=True, **common),
-        actual=load_prices(adjusted=False, **common),
-    )
+    adjusted = load_prices(adjusted=True, **common)
+    # 保留舊 PriceViews.actual 的完整欄位契約，但不做第二次 SQL 查詢。
+    # 還原因子對同一根 OHLC 完全相同，所以可由 raw_close / close 反推
+    # high/low；open/close 則直接使用 loader 在還原前留下的精確原值。
+    actual = adjusted.copy()
+    inverse_adjustment = actual[RAW_CLOSE_COLUMN] / actual["close"]
+    actual["open"] = actual[RAW_OPEN_COLUMN]
+    actual["high"] = actual["high"] * inverse_adjustment
+    actual["low"] = actual["low"] * inverse_adjustment
+    actual["close"] = actual[RAW_CLOSE_COLUMN]
+    return PriceViews(adjusted=adjusted, actual=actual)
 
 
 def _latest_price_date(

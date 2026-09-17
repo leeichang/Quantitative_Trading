@@ -53,37 +53,39 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
+from taiwan_quant.config.costs import (  # noqa: E402
+    DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
+    Tier,
+    resolve_tier,
+)
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
-from taiwan_quant.data.loader import (  # noqa: E402
-    HISTORY_DB_PATH,
-    RAW_OPEN_COLUMN,
-    load_chips,
-    load_price_views,
-)
-from taiwan_quant.validation.benchmarks import (  # noqa: E402
-    equity_curve_statistics,
-)
 from taiwan_quant.data.etf_universe import (  # noqa: E402
     is_etf,
     merge_etf_candidates,
 )
-from taiwan_quant.config.costs import (  # noqa: E402
-    DEFAULT as DEFAULT_COST,
-    Tier,
-    resolve_tier,
+from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
+from taiwan_quant.data.loader import (  # noqa: E402
+    HISTORY_DB_PATH,
+    RAW_OPEN_COLUMN,
+    load_chips,
+    load_prices,
 )
 from taiwan_quant.ranking.tie_break import DEFAULT_TIE_SEED, deterministic_jitter  # noqa: E402
-
-import scripts.validate_oos_trailing as V  # noqa: E402
+from taiwan_quant.validation.benchmarks import (  # noqa: E402
+    equity_curve_statistics,
+)
 
 # ══════════════════════════════════════════════════════════════
 # 固定參數——不可由命令列覆寫（禁令 6、7、8）
@@ -145,25 +147,19 @@ def run(db_path: Path, unlock: bool, reason: str | None,
 
     # 從 2015 載入是為了讓 T 日的分數有足夠歷史；分數只用 T 日及之前的資料
     # （物理截斷測試已驗證無 look-ahead），決策日則嚴格限制在 OOS 區間內。
-    price_views = load_price_views(
+    prices = load_prices(
         members, start=date(2015, 1, 1), end=end, db_path=db_path,
         unlock_frozen=unlock, frozen_reason=reason,
     )
     chips = load_chips(members, start=date(2015, 1, 1), end=end, db_path=db_path,
                        unlock_frozen=unlock, frozen_reason=reason)
-    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
-    actual_by_stock = {
-        sid: price_views.actual.xs(sid, level="stock_id")
-        for sid in members if sid in price_views.actual.index.get_level_values("stock_id")
-    }
+    by_stock = build_dataset(members, prices, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     scores = V.precompute_scores(by_stock)[FAMILY]
     opens = build_frame(by_stock, "open", calendar)
-    actual_opens = build_frame(actual_by_stock, "open", calendar)
+    actual_opens = build_frame(by_stock, RAW_OPEN_COLUMN, calendar)
     closes = build_frame(by_stock, "close", calendar)
-    raw_opens = build_frame(by_stock, RAW_OPEN_COLUMN, calendar)
-    """實際 T+1 開盤價。只給 `resolve_tier` 判斷整股／零股，不進報酬計算"""
 
     oos_ts = pd.Timestamp(OOS_START)
     anchor = next(i for i, d in enumerate(calendar) if d >= oos_ts)
@@ -185,6 +181,14 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
+        assert_holding_price_completeness(
+            decision_date=day,
+            calendar=calendar,
+            candidates=ranked.index,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+        )
         realized = forward.loc[day].dropna()
         common = ranked.index.intersection(realized.index)
         if len(common) < MIN_CANDIDATES:

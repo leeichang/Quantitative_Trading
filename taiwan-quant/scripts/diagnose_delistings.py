@@ -33,8 +33,9 @@ from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
+    RAW_OPEN_COLUMN,
     load_chips,
-    load_price_views,
+    load_prices,
     load_universe_at,
 )
 from taiwan_quant.ranking.tie_break import (  # noqa: E402
@@ -127,10 +128,10 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
 
     members = _members(db_path)
     metadata = _metadata(db_path, end)
-    views = load_price_views(members, start=START, end=end, db_path=db_path)
+    prices = load_prices(members, start=START, end=end, db_path=db_path)
     chips = load_chips(members, start=START, end=end, db_path=db_path)
-    standard = build_dataset(members, views.adjusted, chips)
-    relaxed = build_dataset(members, views.adjusted, chips, min_length=1)
+    standard = build_dataset(members, prices, chips)
+    relaxed = build_dataset(members, prices, chips, min_length=1)
     calendar = validation.trading_calendar(standard.by_stock)
     decision_dates = [
         day
@@ -153,11 +154,11 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         }
         for day in decision_dates
     }
-    actual_opens = _frame(views.actual, "open", calendar)
-    adjusted_opens = _frame(views.adjusted, "open", calendar)
+    actual_opens = _frame(prices, RAW_OPEN_COLUMN, calendar)
+    adjusted_opens = _frame(prices, "open", calendar)
     price_bars = {
-        sid: views.adjusted.xs(sid, level="stock_id")
-        for sid in set(views.adjusted.index.get_level_values("stock_id"))
+        sid: prices.xs(sid, level="stock_id")
+        for sid in set(prices.index.get_level_values("stock_id"))
     }
 
     short_delisted = {

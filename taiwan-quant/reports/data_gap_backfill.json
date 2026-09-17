@@ -1,0 +1,4115 @@
+{
+  "source": "FinMind TaiwanStockPrice",
+  "start": "2015-01-01",
+  "end": "2023-12-29",
+  "stocks_checked": 72,
+  "gap_days_checked": 683,
+  "database_rows_before": 2914166,
+  "database_rows_after": 2914166,
+  "rows_repaired": 0,
+  "rows_inserted": 0,
+  "rows_updated": 0,
+  "source_confirmed_missing_rows": 0,
+  "source_confirmed_no_trade_rows": 683,
+  "failures": [],
+  "classifications": [
+    {
+      "stock_id": "1101",
+      "date": "2017-04-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1101",
+      "date": "2017-04-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1216",
+      "date": "2017-07-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1229",
+      "date": "2019-03-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1262",
+      "date": "2019-07-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-09-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-10-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "1717",
+      "date": "2022-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-11-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-11-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-11-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-11-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-12-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-12-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2006",
+      "date": "2021-12-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2027",
+      "date": "2018-10-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2104",
+      "date": "2020-02-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2104",
+      "date": "2021-11-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2201",
+      "date": "2020-10-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-09-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-09-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-10-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-10-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2204",
+      "date": "2019-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2206",
+      "date": "2018-05-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2231",
+      "date": "2019-01-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2239",
+      "date": "2015-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2239",
+      "date": "2015-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2239",
+      "date": "2015-11-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2303",
+      "date": "2018-06-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2311",
+      "date": "2016-05-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2016-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2317",
+      "date": "2018-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2324",
+      "date": "2018-08-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2325",
+      "date": "2016-05-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2016-08-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2017-08-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2018-04-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2018-05-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2019-11-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2021-06-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2327",
+      "date": "2022-10-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2337",
+      "date": "2017-08-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2354",
+      "date": "2016-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2368",
+      "date": "2022-09-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2371",
+      "date": "2019-03-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-11-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-11-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-12-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-12-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-12-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-12-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2404",
+      "date": "2018-12-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-09-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-10-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2409",
+      "date": "2022-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2448",
+      "date": "2020-06-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2454",
+      "date": "2016-05-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2017-01-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-01-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-06-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-10-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2018-10-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2456",
+      "date": "2021-06-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2458",
+      "date": "2018-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2474",
+      "date": "2020-08-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-09-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-09-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-09-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2015-10-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2016-09-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2492",
+      "date": "2017-09-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2498",
+      "date": "2017-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2501",
+      "date": "2016-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2504",
+      "date": "2020-10-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2603",
+      "date": "2022-09-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-04-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-05-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2609",
+      "date": "2017-05-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2633",
+      "date": "2015-12-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2823",
+      "date": "2017-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2849",
+      "date": "2021-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2849",
+      "date": "2022-11-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2888",
+      "date": "2018-04-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2889",
+      "date": "2021-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2912",
+      "date": "2017-07-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2915",
+      "date": "2018-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2017-09-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2017-12-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2017-12-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2017-12-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-01-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-05-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-05-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-08-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-09-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-09-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-11-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-11-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2018-12-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2021-11-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-05-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-10-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-11-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-11-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-11-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "2923",
+      "date": "2022-11-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3026",
+      "date": "2017-10-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3035",
+      "date": "2015-09-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3036",
+      "date": "2017-04-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3036",
+      "date": "2020-02-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3036",
+      "date": "2022-04-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3036",
+      "date": "2023-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3037",
+      "date": "2022-02-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-09-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-10-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2022-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3481",
+      "date": "2023-08-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3532",
+      "date": "2018-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2015-12-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3545",
+      "date": "2020-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2017-10-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-07-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-07-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-08-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-08-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-08-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-08-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3576",
+      "date": "2021-08-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3665",
+      "date": "2021-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3682",
+      "date": "2020-01-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2018-09-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "3702",
+      "date": "2019-11-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4919",
+      "date": "2019-11-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4938",
+      "date": "2020-08-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-01-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-01-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-01-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-01-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-02-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-02-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-02-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-03-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-03-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-03-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-04-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-04-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-04-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-04-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-04-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-05-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-06-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-06-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-06-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-06-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-07-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-07-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-07-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-08-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-10-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-11-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2015-12-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2016-01-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2016-01-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2016-01-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-04-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-09-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4943",
+      "date": "2023-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4958",
+      "date": "2020-03-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "4961",
+      "date": "2023-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "5264",
+      "date": "2020-08-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "5269",
+      "date": "2020-02-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2019-12-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2020-11-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6271",
+      "date": "2022-12-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6409",
+      "date": "2018-01-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6414",
+      "date": "2016-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6414",
+      "date": "2018-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6415",
+      "date": "2022-07-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6415",
+      "date": "2022-07-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6415",
+      "date": "2022-07-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6415",
+      "date": "2022-07-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6415",
+      "date": "2022-07-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2015-09-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2017-03-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2019-05-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6531",
+      "date": "2021-10-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "6550",
+      "date": "2022-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2016-01-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2016-11-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8150",
+      "date": "2018-10-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-01-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-02-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-02-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-03-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-03-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-03-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-03-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-04-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-05-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-05-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-05-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-05-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-05-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-07-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-07-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-07-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-07-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-08-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8464",
+      "date": "2015-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-10-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-11-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2015-12-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-01-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-02-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-30",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-03-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-04-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-11",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-12",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-24",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-05-25",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-07",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-08",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-06-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-07-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-07-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-07-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-08-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-08-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-08-09",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-08-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-09-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-10-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-10-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-10-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-10-31",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-10",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-11-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-26",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2016-12-29",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-01-23",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-06",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-13",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-16",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-17",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-02-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-04-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-04-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-05-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "8478",
+      "date": "2017-09-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-09-27",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-09-28",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-10-01",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-10-02",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-10-03",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-10-04",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2018-10-05",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-14",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-15",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-18",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-19",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-20",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-21",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    },
+    {
+      "stock_id": "9945",
+      "date": "2023-09-22",
+      "source_has_trade": false,
+      "classification": "no_trade_or_suspension"
+    }
+  ]
+}

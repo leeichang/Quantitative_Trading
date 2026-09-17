@@ -21,11 +21,13 @@ import scripts.validate_oos_trailing as validation  # noqa: E402
 from taiwan_quant.config.costs import DEFAULT, Tier, resolve_tier  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf  # noqa: E402
+from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
+    RAW_OPEN_COLUMN,
     load_chips,
-    load_price_views,
+    load_prices,
 )
 from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
@@ -115,14 +117,14 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         raise ValueError(f"禁止載入 2024+；end 最晚為 {DEV_END}")
 
     members = _members(db_path)
-    views = load_price_views(members, start=START, end=end, db_path=db_path)
+    prices = load_prices(members, start=START, end=end, db_path=db_path)
     chips = load_chips(members, start=START, end=end, db_path=db_path)
-    by_stock = build_dataset(members, views.adjusted, chips).by_stock
+    by_stock = build_dataset(members, prices, chips).by_stock
     calendar = validation.trading_calendar(by_stock)
     scores = validation.precompute_scores(by_stock)[FAMILY]
-    adjusted_opens = _frame(views.adjusted, "open", calendar)
-    actual_opens = _frame(views.actual, "open", calendar)
-    adjusted_closes = _frame(views.adjusted, "close", calendar)
+    adjusted_opens = _frame(prices, "open", calendar)
+    actual_opens = _frame(prices, RAW_OPEN_COLUMN, calendar)
+    adjusted_closes = _frame(prices, "close", calendar)
     forward = adjusted_closes.shift(-HOLDING_DAYS) / adjusted_opens.shift(-1) - 1.0
 
     decision_dates = [
@@ -150,6 +152,14 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
+        assert_holding_price_completeness(
+            decision_date=day,
+            calendar=calendar,
+            candidates=ranked.index,
+            opens=adjusted_opens,
+            closes=adjusted_closes,
+            holding_days=HOLDING_DAYS,
+        )
         realized = forward.loc[day].dropna()
         common = ranked.index.intersection(realized.index)
         ordered = sorted(

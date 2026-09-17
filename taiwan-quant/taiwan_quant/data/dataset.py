@@ -93,8 +93,8 @@ def build_dataset(
     Returns:
         Dataset（含剔除紀錄）
 
-    籌碼以 inner join 併入——籌碼缺當天的資料就不該用那天做決策。
-    缺整段籌碼的標的保留價格，由策略族自行判斷能不能用。
+    籌碼以 left join 併入。缺值保留為 NaN，讓需要籌碼的策略自行跳過，
+    但不能連帶刪除動能等只需要價格的策略日期。
     """
     price_ids = set(prices.index.get_level_values("stock_id"))
     chip_ids = (
@@ -113,7 +113,7 @@ def build_dataset(
         bars = prices.xs(sid, level="stock_id")
         if chips is not None and sid in chip_ids:
             bars = bars.join(
-                chips.xs(sid, level="stock_id")[list(CHIP_COLUMNS)], how="inner"
+                chips.xs(sid, level="stock_id")[list(CHIP_COLUMNS)], how="left"
             )
 
         if len(bars) < min_length:
