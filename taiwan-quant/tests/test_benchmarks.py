@@ -215,17 +215,20 @@ def test_build_dataset_records_missing_stocks() -> None:
 
 
 @pytest.mark.unit
-def test_build_dataset_inner_join_shortens_series() -> None:
+def test_build_dataset_chip_gaps_do_not_shorten_price_series() -> None:
     """
-    籌碼只有末段時 inner join 會把價格序列砍短——這正是 7769 的情形。
-    砍短後若不足門檻，必須被剔除。
+    籌碼只有末段時仍保留完整價格；缺籌碼列用 NaN 明確表示未知。
+
+    需要籌碼的策略會跳過 NaN，只用價格的策略則不應連帶失去日期。
     """
     prices = price_frame({"A": [100.0] * 20})
     chips = chip_frame(["A"], 3, start="2024-01-01")
     result = build_dataset(["A"], prices, chips, min_length=10)
 
-    assert result.by_stock == {}
-    assert result.skipped == (("A", 3),)
+    bars = result.by_stock["A"]
+    assert len(bars) == 20
+    assert int(bars["foreign_net"].isna().sum()) == 17
+    assert result.skipped == ()
 
 
 @pytest.mark.unit
