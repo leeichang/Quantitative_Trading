@@ -26,6 +26,7 @@ from __future__ import annotations
 import inspect
 import json
 import sqlite3
+import warnings
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -473,7 +474,12 @@ def load_price_views(
     unlock_frozen: bool = False,
     frozen_reason: str | None = None,
 ) -> PriceViews:
-    """經同一 loader 守門載入分離的還原價與實際價視圖。"""
+    """已棄用的相容介面；由單一價格框架衍生實際開收盤視圖。"""
+    warnings.warn(
+        "load_price_views 已棄用；請使用 load_prices 的 raw_open / raw_close",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     common = {
         "stock_ids": stock_ids,
         "start": start,
@@ -483,10 +489,11 @@ def load_price_views(
         "unlock_frozen": unlock_frozen,
         "frozen_reason": frozen_reason,
     }
-    return PriceViews(
-        adjusted=load_prices(adjusted=True, **common),
-        actual=load_prices(adjusted=False, **common),
+    adjusted = load_prices(adjusted=True, **common)
+    actual = adjusted[[RAW_OPEN_COLUMN, RAW_CLOSE_COLUMN]].rename(
+        columns={RAW_OPEN_COLUMN: "open", RAW_CLOSE_COLUMN: "close"}
     )
+    return PriceViews(adjusted=adjusted, actual=actual.copy())
 
 
 def _latest_price_date(

@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -50,20 +51,23 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
 from taiwan_quant.config.costs import (  # noqa: E402
     DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
     resolve_tier,
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
     load_chips,
-    load_price_views,
+    load_prices,
 )
 from taiwan_quant.ranking.constraints import (  # noqa: E402
     ConstraintLimits,
@@ -82,8 +86,6 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
-
-import scripts.validate_oos_trailing as V  # noqa: E402
 
 FAMILY = "動能突破"
 HOLDING_DAYS = 40
@@ -162,6 +164,14 @@ def evaluate(
         allowed = tuple(members_at.get(day) or ())
         if not allowed:
             continue
+        assert_holding_price_completeness(
+            decision_date=day,
+            calendar=calendar,
+            candidates=allowed,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+        )
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
@@ -295,7 +305,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
 
     # ETF 一律載入：0050 是 beta 的基準，缺它 betas() 會拋錯
     members = list(merge_etf_candidates(tuple(members), include=True))
-    price_views = load_price_views(
+    prices = load_prices(
         members,
         start=date(2015, 1, 1),
         end=end,
@@ -311,7 +321,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
         unlock_frozen=unlock,
         frozen_reason=reason,
     )
-    by_stock = build_dataset(members, price_views.adjusted, chips).by_stock
+    by_stock = build_dataset(members, prices, chips).by_stock
 
     calendar = V.trading_calendar(by_stock)
     scores = V.precompute_scores(by_stock)[FAMILY]
@@ -319,7 +329,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
         {sid: bars["open"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
     actual_opens = (
-        price_views.actual["open"].unstack("stock_id").reindex(calendar)
+        prices[RAW_OPEN_COLUMN].unstack("stock_id").reindex(calendar)
     )
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
