@@ -305,13 +305,15 @@ def test_unadjusted_mode_returns_raw_prices(fake_db: Path) -> None:
 
 @pytest.mark.unit
 def test_price_views_keep_adjusted_and_actual_prices_separate(fake_db: Path) -> None:
-    """同一日還原價 200、實際價 100，必須存在不同 DataFrame，不能混欄。"""
-    views = load_price_views(["2330"], db_path=fake_db)
+    """舊雙視圖介面必須警告棄用，且相容視圖 index 不得分歧。"""
+    with pytest.warns(DeprecationWarning, match="raw_open.*raw_close"):
+        views = load_price_views(["2330"], db_path=fake_db)
     key = ("2330", pd.Timestamp("2026-01-06"))
 
     assert views.adjusted.loc[key, "close"] == pytest.approx(200.0)
     assert views.actual.loc[key, "close"] == pytest.approx(100.0)
     assert views.adjusted is not views.actual
+    assert views.adjusted.index.equals(views.actual.index)
 
 
 @pytest.mark.unit
