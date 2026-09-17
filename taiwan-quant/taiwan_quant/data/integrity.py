@@ -88,6 +88,43 @@ def _has_tradeable_price(frame: pd.DataFrame, day: pd.Timestamp, stock_id: str) 
     return math.isfinite(value) and value > 0
 
 
+def holding_dates(
+    decision_date: pd.Timestamp,
+    calendar: Sequence[pd.Timestamp],
+    *,
+    holding_days: int,
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """回傳 T+1 進場日與 T+H 出場日，集中管理持有期邊界。"""
+    dates = list(calendar)
+    try:
+        decision_index = dates.index(decision_date)
+    except ValueError as exc:
+        raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
+    entry_index = decision_index + 1
+    target_index = decision_index + holding_days
+    if entry_index >= len(dates) or target_index >= len(dates):
+        raise DataIntegrityError(
+            f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
+        )
+    return dates[entry_index], dates[target_index]
+
+
+def complete_holding_decision_dates(
+    calendar: Sequence[pd.Timestamp],
+    decision_dates: Iterable[pd.Timestamp],
+    *,
+    holding_days: int,
+) -> list[pd.Timestamp]:
+    """只保留具備完整 T+H 邊界的決策日。"""
+    dates = list(calendar)
+    positions = {day: index for index, day in enumerate(dates)}
+    return [
+        day
+        for day in decision_dates
+        if day in positions and positions[day] + holding_days < len(dates)
+    ]
+
+
 def assert_holding_price_completeness(
     *,
     decision_date: pd.Timestamp,
@@ -98,20 +135,9 @@ def assert_holding_price_completeness(
     holding_days: int,
 ) -> None:
     """候選池任一股票缺 T+1 開盤或 T+H 收盤時立即失敗。"""
-    dates = list(calendar)
-    try:
-        decision_index = dates.index(decision_date)
-    except ValueError as exc:
-        raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
-
-    entry_index = decision_index + 1
-    exit_index = decision_index + holding_days
-    if exit_index >= len(dates):
-        raise DataIntegrityError(
-            f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
-        )
-    entry_day = dates[entry_index]
-    exit_day = dates[exit_index]
+    entry_day, exit_day = holding_dates(
+        decision_date, calendar, holding_days=holding_days
+    )
 
     problems: list[str] = []
     for stock_id in candidates:
@@ -139,20 +165,9 @@ def select_holding_positions(
     """依排名選滿 N 檔；共用下市分類，並檢查每個實際遞補者。"""
     if n_positions < 1:
         raise ValueError("n_positions 必須至少為 1")
-    dates = list(calendar)
-    try:
-        decision_index = dates.index(decision_date)
-    except ValueError as exc:
-        raise DataIntegrityError(f"決策日 {decision_date.date()} 不在交易日曆") from exc
-
-    entry_index = decision_index + 1
-    target_index = decision_index + holding_days
-    if target_index >= len(dates):
-        raise DataIntegrityError(
-            f"決策日 {decision_date.date()} 後不足 {holding_days} 個交易日"
-        )
-    entry_date = dates[entry_index]
-    target_date = dates[target_index]
+    entry_date, target_date = holding_dates(
+        decision_date, calendar, holding_days=holding_days
+    )
 
     selected: list[HoldingPosition] = []
     for stock_id in ordered_candidates:

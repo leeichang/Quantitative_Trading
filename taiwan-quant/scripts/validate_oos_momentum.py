@@ -75,7 +75,10 @@ from taiwan_quant.data.etf_universe import (  # noqa: E402
     is_etf,
     merge_etf_candidates,
 )
-from taiwan_quant.data.integrity import select_holding_positions  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    select_holding_positions,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -164,14 +167,17 @@ def run(db_path: Path, unlock: bool, reason: str | None,
 
     oos_ts = pd.Timestamp(OOS_START)
     anchor = next(i for i, d in enumerate(calendar) if d >= oos_ts)
-    decision_dates = calendar[anchor::DECISION_STRIDE]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[anchor::DECISION_STRIDE],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
     )
     large_at = V.resolve_members(
         decision_dates, db_path, 50, UNIVERSE_BASIS
     )
-    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
     delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     trades, per_period = [], []
@@ -278,11 +284,24 @@ def run(db_path: Path, unlock: bool, reason: str | None,
             allowed = members_at.get(day)
             if not allowed:
                 continue
-            realized = forward.loc[day].reindex(allowed).dropna()
-            if len(realized) < MIN_CANDIDATES:
+            randomized = list(allowed)
+            rng.shuffle(randomized)
+            selected = select_holding_positions(
+                decision_date=day,
+                calendar=calendar,
+                ordered_candidates=randomized,
+                opens=opens,
+                closes=closes,
+                holding_days=HOLDING_DAYS,
+                n_positions=N_POSITIONS,
+                delisted_dates=delisted_dates,
+            )
+            if len(selected) < N_POSITIONS:
                 continue
-            idx = rng.choice(len(realized), N_POSITIONS, replace=False)
-            vals.append(float(realized.iloc[idx].mean()) - ROUND_TRIP)
+            vals.append(
+                float(np.mean([position.gross_return for position in selected]))
+                - ROUND_TRIP
+            )
         if vals:
             trials.append(float(np.prod(1 + np.array(vals)) - 1))
 
@@ -291,10 +310,21 @@ def run(db_path: Path, unlock: bool, reason: str | None,
         allowed = members_at.get(day)
         if not allowed:
             continue
-        realized = forward.loc[day].reindex(allowed).dropna()
-        if len(realized) < MIN_CANDIDATES:
+        selected = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=allowed,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=len(allowed),
+            delisted_dates=delisted_dates,
+        )
+        if len(selected) < MIN_CANDIDATES:
             continue
-        eq_weight.append(float(realized.mean()) - ROUND_TRIP)
+        eq_weight.append(
+            float(np.mean([position.gross_return for position in selected])) - ROUND_TRIP
+        )
 
     return {
         "strategy_version": STRATEGY_VERSION,

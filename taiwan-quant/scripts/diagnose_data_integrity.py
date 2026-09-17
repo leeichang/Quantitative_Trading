@@ -17,7 +17,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from taiwan_quant.data.integrity import find_gap_runs  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    find_gap_runs,
+    holding_dates,
+)
 from taiwan_quant.data.loader import DEFAULT_UNIVERSE_BASIS, HISTORY_DB_PATH  # noqa: E402
 
 DEV_END = date(2023, 12, 29)
@@ -106,19 +110,19 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         metadata = _metadata(con)
         snapshot_dates, snapshots = _snapshots(con, end)
 
-    decision_dates = [
-        day
-        for day in calendar[WARMUP_DAYS::STRIDE]
-        if calendar.index(day) + 1 + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[WARMUP_DAYS::STRIDE],
+        holding_days=HOLDING_DAYS,
+    )
     ever_candidates = {
         stock_id for members in snapshots.values() for stock_id in members
     }
     relevant: dict[tuple[str, pd.Timestamp], list[dict[str, str]]] = defaultdict(list)
     for decision_day in decision_dates:
-        idx = calendar.index(decision_day)
-        entry_day = calendar[idx + 1]
-        exit_day = calendar[idx + 1 + HOLDING_DAYS]
+        entry_day, exit_day = holding_dates(
+            decision_day, calendar, holding_days=HOLDING_DAYS
+        )
         for stock_id in _snapshot_at(decision_day, snapshot_dates, snapshots):
             relevant[(stock_id, entry_day)].append(
                 {"decision_date": decision_day.date().isoformat(), "role": "T+1"}

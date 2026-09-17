@@ -30,6 +30,10 @@ from scripts.diagnose_position_costs import (  # noqa: E402
 )
 from taiwan_quant.config.costs import DEFAULT  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    holding_dates,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
@@ -133,11 +137,11 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
     standard = build_dataset(members, prices, chips)
     relaxed = build_dataset(members, prices, chips, min_length=1)
     calendar = validation.trading_calendar(standard.by_stock)
-    decision_dates = [
-        day
-        for day in calendar[WARMUP_DAYS::HOLDING_DAYS]
-        if calendar.index(day) + 1 + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[WARMUP_DAYS::HOLDING_DAYS],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = validation.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, DEFAULT_UNIVERSE_BASIS
     )
@@ -193,8 +197,9 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
                     deterministic_jitter(sid, DEFAULT_TIE_SEED),
                 ),
             )
-            entry_day = calendar[calendar.index(day) + 1]
-            target_day = calendar[calendar.index(day) + 1 + HOLDING_DAYS]
+            entry_day, target_day = holding_dates(
+                day, calendar, holding_days=HOLDING_DAYS
+            )
             settlements = {}
             tracked_by_sid: dict[str, dict[str, Any]] = {}
             for strategy_rank, sid in enumerate(ordered, start=1):
