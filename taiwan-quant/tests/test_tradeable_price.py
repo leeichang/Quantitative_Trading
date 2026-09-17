@@ -3,11 +3,11 @@
 
 ## 問題
 
-`config.costs.resolve_tier(price, amount, is_etf)` 用 `price` 判斷
-「這一檔買不買得起整張」：
+`config.costs.resolve_tier(actual_price, adjusted_price, amount, is_etf)`
+用 `actual_price` 判斷「這一檔買不買得起整張」：
 
 ```python
-whole = amount >= price * LOT_SIZE      # LOT_SIZE = 1000
+whole = amount >= actual_price * LOT_SIZE      # LOT_SIZE = 1000
 ```
 
 N=10 時 `amount = 40,000`，門檻是股價 **40 元**。
@@ -152,8 +152,24 @@ def test_tier_differs_between_the_two_prices(split_adjusted_db: Path) -> None:
 
     assert amount >= adjusted_price * LOT_SIZE
     assert amount < tradeable_price * LOT_SIZE
-    assert resolve_tier(price=adjusted_price, amount=amount) is Tier.LARGE_WHOLE
-    assert resolve_tier(price=tradeable_price, amount=amount) is Tier.LARGE
+    # 錯把還原價當可負擔性基準 → 誤判整股（bug 行為）
+    assert (
+        resolve_tier(
+            actual_price=adjusted_price,
+            adjusted_price=adjusted_price,
+            amount=amount,
+        )
+        is Tier.LARGE_WHOLE
+    )
+    # 用實際價判可負擔性 → 正確落零股
+    assert (
+        resolve_tier(
+            actual_price=tradeable_price,
+            adjusted_price=adjusted_price,
+            amount=amount,
+        )
+        is Tier.LARGE
+    )
 
 
 @pytest.mark.unit
