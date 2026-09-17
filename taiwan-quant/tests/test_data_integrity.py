@@ -77,8 +77,31 @@ def test_holding_price_guard_rejects_missing_exit_instead_of_dropna() -> None:
             candidates=["2330"],
             opens=opens,
             closes=closes,
-            holding_days=1,
+            holding_days=2,
         )
+
+
+@pytest.mark.unit
+def test_selection_guard_exits_at_decision_plus_h_not_entry_plus_h() -> None:
+    calendar = list(pd.date_range("2023-01-02", periods=5, freq="B"))
+    opens = pd.DataFrame({"A": [99.0, 100.0, 101.0, 102.0, 103.0]}, index=calendar)
+    closes = pd.DataFrame(
+        {"A": [99.0, 100.0, 101.0, 110.0, float("nan")]}, index=calendar
+    )
+
+    selected = select_holding_positions(
+        decision_date=calendar[0],
+        calendar=calendar,
+        ordered_candidates=["A"],
+        opens=opens,
+        closes=closes,
+        holding_days=3,
+        n_positions=1,
+        delisted_dates={},
+    )
+
+    # T+1 以 100 進場、T+3 以 110 出場；不可錯查 T+4 的 NaN。
+    assert selected[0].gross_return == pytest.approx(0.10)
 
 
 @pytest.mark.unit
@@ -106,8 +129,8 @@ def test_selection_guard_allows_delisted_position_with_policy_b_return() -> None
 @pytest.mark.unit
 def test_selection_guard_rejects_suspended_position_in_top_n() -> None:
     calendar = list(pd.date_range("2023-01-02", periods=6, freq="B"))
-    opens = pd.DataFrame({"A": [100.0, 100.0, 100.0, 100.0, float("nan"), 101.0]}, index=calendar)
-    closes = pd.DataFrame({"A": [100.0, 100.0, 100.0, 100.0, float("nan"), 101.0]}, index=calendar)
+    opens = pd.DataFrame({"A": [100.0, 100.0, 100.0, 100.0, 101.0, 101.0]}, index=calendar)
+    closes = pd.DataFrame({"A": [100.0, 100.0, 100.0, float("nan"), 101.0, 101.0]}, index=calendar)
 
     with pytest.raises(DataIntegrityError, match="A.*suspended_or_missing"):
         select_holding_positions(
@@ -128,7 +151,7 @@ def test_selection_guard_checks_replacement_after_missing_entry() -> None:
     opens = pd.DataFrame(
         {
             "NO_ENTRY": [100.0, float("nan"), 100.0, 100.0, 100.0, 100.0],
-            "REPLACEMENT": [100.0, 100.0, 100.0, 100.0, float("nan"), 101.0],
+            "REPLACEMENT": [100.0, 100.0, 100.0, float("nan"), 101.0, 101.0],
         },
         index=calendar,
     )
@@ -151,7 +174,7 @@ def test_selection_guard_checks_replacement_after_missing_entry() -> None:
 def test_selection_guard_does_not_check_names_below_filled_top_n() -> None:
     calendar = list(pd.date_range("2023-01-02", periods=6, freq="B"))
     opens = pd.DataFrame(
-        {"BUY": [100.0] * 6, "BELOW": [100.0, 100.0, 100.0, 100.0, float("nan"), 101.0]},
+        {"BUY": [100.0] * 6, "BELOW": [100.0, 100.0, 100.0, float("nan"), 101.0, 101.0]},
         index=calendar,
     )
     closes = opens.copy()
