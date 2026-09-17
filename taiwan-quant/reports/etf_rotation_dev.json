@@ -1,0 +1,407 @@
+{
+  "end": "2023-12-29",
+  "universe": [
+    "0050",
+    "0056"
+  ],
+  "trading_days": 2197,
+  "first_day": "2015-01-05",
+  "last_day": "2023-12-29",
+  "whole_lot_fraction": {
+    "0050": 1.0,
+    "0056": 1.0
+  },
+  "cost_tax_0_3": 0.00571,
+  "cost_tax_0_1": 0.0037099999999999998,
+  "n_trials": 16,
+  "trial_sharpes": [
+    0.4507129411726439,
+    0.37221684722619974,
+    0.39051077831654046,
+    0.5444741805288024,
+    0.6690076266828372,
+    0.6103314921130908,
+    0.6894954872606882,
+    0.7679041465709329,
+    0.8261236128017618,
+    0.720316545841305,
+    0.8747417347015901,
+    0.8033843605330084,
+    0.8298668486592754,
+    1.0094860420671272,
+    0.9583706771472815,
+    0.8937137358857324
+  ],
+  "trial_sharpe_std": 0.19578505356043174,
+  "horizons": {
+    "20": {
+      "walk_forward_tax_0_3": {
+        "periods": 89,
+        "gross_per_trip": 0.0126736891467328,
+        "cost_per_trip": 0.00571,
+        "net_per_trip": 0.006963689146732803,
+        "total_return": 0.6345793487278286,
+        "annualised": 0.07204381589338027,
+        "sharpe": 0.4655007629495926,
+        "max_drawdown": -0.31089210515290433,
+        "years": 7.063492063492063
+      },
+      "walk_forward_tax_0_1": {
+        "periods": 89,
+        "gross_per_trip": 0.0126736891467328,
+        "cost_per_trip": 0.0037099999999999998,
+        "net_per_trip": 0.008963689146732803,
+        "total_return": 0.9512869121158536,
+        "annualised": 0.0992630835721533,
+        "sharpe": 0.5991944856706863,
+        "max_drawdown": -0.28794245882092406,
+        "years": 7.063492063492063
+      },
+      "chosen_lookback_counts": {
+        "20": 15,
+        "60": 11,
+        "120": 29,
+        "250": 34
+      },
+      "pbo": {
+        "pbo": 0.75,
+        "n_candidates": 4,
+        "n_periods": 97
+      },
+      "dsr": {
+        "deflated_sharpe": 0.879866018200171,
+        "observed_sharpe": 0.4655007629495926,
+        "expected_max_sharpe": 0.35250202980337214,
+        "trial_sharpe_std": 0.19578505356043174,
+        "n_trials": 16,
+        "n_observations": 109
+      },
+      "fixed_lookback": {
+        "20": {
+          "periods": 97,
+          "gross_per_trip": 0.01241094186565914,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.0067009418656591435,
+          "total_return": 0.6680959045002031,
+          "annualised": 0.06872464078218377,
+          "sharpe": 0.4507129411726439,
+          "max_drawdown": -0.3678668621787088,
+          "years": 7.698412698412699
+        },
+        "60": {
+          "periods": 97,
+          "gross_per_trip": 0.011351745142361043,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.005641745142361047,
+          "total_return": 0.4984459751712298,
+          "annualised": 0.05393841479059813,
+          "sharpe": 0.37221684722619974,
+          "max_drawdown": -0.4078350471479283,
+          "years": 7.698412698412699
+        },
+        "120": {
+          "periods": 97,
+          "gross_per_trip": 0.01158319864752112,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.005873198647521124,
+          "total_return": 0.5342793050576218,
+          "annualised": 0.05717871394145613,
+          "sharpe": 0.39051077831654046,
+          "max_drawdown": -0.4374356448714988,
+          "years": 7.698412698412699
+        },
+        "250": {
+          "periods": 97,
+          "gross_per_trip": 0.013810483538705455,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.00810048353870546,
+          "total_return": 0.9084141350684942,
+          "annualised": 0.08757322183832228,
+          "sharpe": 0.5444741805288024,
+          "max_drawdown": -0.28300487298497057,
+          "years": 7.698412698412699
+        }
+      }
+    },
+    "40": {
+      "walk_forward_tax_0_3": {
+        "periods": 40,
+        "gross_per_trip": 0.02431963315779439,
+        "cost_per_trip": 0.00571,
+        "net_per_trip": 0.018609633157794396,
+        "total_return": 0.898607279917063,
+        "annualised": 0.10625063967150616,
+        "sharpe": 0.6507256459682365,
+        "max_drawdown": -0.2766731878617904,
+        "years": 6.34920634920635
+      },
+      "walk_forward_tax_0_1": {
+        "periods": 40,
+        "gross_per_trip": 0.02431963315779439,
+        "cost_per_trip": 0.0037099999999999998,
+        "net_per_trip": 0.020609633157794387,
+        "total_return": 1.0543512493704257,
+        "annualised": 0.12007283723524043,
+        "sharpe": 0.7206599257523262,
+        "max_drawdown": -0.2703768106173192,
+        "years": 6.34920634920635
+      },
+      "chosen_lookback_counts": {
+        "20": 13,
+        "60": 0,
+        "120": 12,
+        "250": 15
+      },
+      "pbo": {
+        "pbo": 0.75,
+        "n_candidates": 4,
+        "n_periods": 48
+      },
+      "dsr": {
+        "deflated_sharpe": 0.9850382193220302,
+        "observed_sharpe": 0.6507256459682365,
+        "expected_max_sharpe": 0.35250202980337214,
+        "trial_sharpe_std": 0.19578505356043174,
+        "n_trials": 16,
+        "n_observations": 54
+      },
+      "fixed_lookback": {
+        "20": {
+          "periods": 48,
+          "gross_per_trip": 0.02271664483122084,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.017006644831220847,
+          "total_return": 1.0480963239687946,
+          "annualised": 0.09866360265291663,
+          "sharpe": 0.6690076266828372,
+          "max_drawdown": -0.27762824847138257,
+          "years": 7.6190476190476195
+        },
+        "60": {
+          "periods": 48,
+          "gross_per_trip": 0.021599314557724736,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.01588931455772474,
+          "total_return": 0.9346510936732679,
+          "annualised": 0.09047722152543725,
+          "sharpe": 0.6103314921130908,
+          "max_drawdown": -0.2766731878617903,
+          "years": 7.6190476190476195
+        },
+        "120": {
+          "periods": 48,
+          "gross_per_trip": 0.024533686088028403,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.018823686088028407,
+          "total_return": 1.199612763193461,
+          "annualised": 0.10900356649462939,
+          "sharpe": 0.6894954872606882,
+          "max_drawdown": -0.2826751860550225,
+          "years": 7.6190476190476195
+        },
+        "250": {
+          "periods": 48,
+          "gross_per_trip": 0.026663774077880825,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.02095377407788083,
+          "total_return": 1.4349484595163209,
+          "annualised": 0.12389770063503369,
+          "sharpe": 0.7679041465709329,
+          "max_drawdown": -0.22676734408955068,
+          "years": 7.6190476190476195
+        }
+      }
+    },
+    "60": {
+      "walk_forward_tax_0_3": {
+        "periods": 24,
+        "gross_per_trip": 0.039144735632750324,
+        "cost_per_trip": 0.00571,
+        "net_per_trip": 0.03343473563275033,
+        "total_return": 0.9664029225312998,
+        "annualised": 0.12562230257003293,
+        "sharpe": 0.6801916238414205,
+        "max_drawdown": -0.21762885036555413,
+        "years": 5.714285714285714
+      },
+      "walk_forward_tax_0_1": {
+        "periods": 24,
+        "gross_per_trip": 0.039144735632750324,
+        "cost_per_trip": 0.0037099999999999998,
+        "net_per_trip": 0.03543473563275033,
+        "total_return": 1.060721351260467,
+        "annualised": 0.13488896290001606,
+        "sharpe": 0.7208793464131016,
+        "max_drawdown": -0.21562885036555413,
+        "years": 5.714285714285714
+      },
+      "chosen_lookback_counts": {
+        "20": 14,
+        "60": 1,
+        "120": 9,
+        "250": 0
+      },
+      "pbo": {
+        "pbo": 0.625,
+        "n_candidates": 4,
+        "n_periods": 32
+      },
+      "dsr": {
+        "deflated_sharpe": 0.9737272702320845,
+        "observed_sharpe": 0.6801916238414205,
+        "expected_max_sharpe": 0.35250202980337214,
+        "trial_sharpe_std": 0.19578505356043174,
+        "n_trials": 16,
+        "n_observations": 36
+      },
+      "fixed_lookback": {
+        "20": {
+          "periods": 32,
+          "gross_per_trip": 0.042060940040911377,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.036350940040911384,
+          "total_return": 1.7780816421396803,
+          "annualised": 0.14351412066981473,
+          "sharpe": 0.8261236128017618,
+          "max_drawdown": -0.21762885036555413,
+          "years": 7.619047619047619
+        },
+        "60": {
+          "periods": 32,
+          "gross_per_trip": 0.03711363543302024,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.031403635433020244,
+          "total_return": 1.3884875124325702,
+          "annualised": 0.12105944108620825,
+          "sharpe": 0.720316545841305,
+          "max_drawdown": -0.21762885036555413,
+          "years": 7.619047619047619
+        },
+        "120": {
+          "periods": 32,
+          "gross_per_trip": 0.04291056164021992,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.037200561640219926,
+          "total_return": 1.8748256018859801,
+          "annualised": 0.14866333802280884,
+          "sharpe": 0.8747417347015901,
+          "max_drawdown": -0.21762885036555413,
+          "years": 7.619047619047619
+        },
+        "250": {
+          "periods": 32,
+          "gross_per_trip": 0.04149160828917836,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.03578160828917837,
+          "total_return": 1.7203169095638504,
+          "annualised": 0.14036481623181252,
+          "sharpe": 0.8033843605330084,
+          "max_drawdown": -0.21762885036555413,
+          "years": 7.619047619047619
+        }
+      }
+    },
+    "120": {
+      "walk_forward_tax_0_3": {
+        "periods": 8,
+        "gross_per_trip": 0.03641726371670813,
+        "cost_per_trip": 0.00571,
+        "net_per_trip": 0.030707263716708136,
+        "total_return": 0.23711091981069377,
+        "annualised": 0.05744373401751557,
+        "sharpe": 0.47334144497144365,
+        "max_drawdown": -0.14788300821819533,
+        "years": 3.8095238095238093
+      },
+      "walk_forward_tax_0_1": {
+        "periods": 8,
+        "gross_per_trip": 0.03641726371670813,
+        "cost_per_trip": 0.0037099999999999998,
+        "net_per_trip": 0.03270726371670813,
+        "total_return": 0.256588377073095,
+        "annualised": 0.061788879652178164,
+        "sharpe": 0.5041707268858652,
+        "max_drawdown": -0.14418660038612197,
+        "years": 3.8095238095238093
+      },
+      "chosen_lookback_counts": {
+        "20": 6,
+        "60": 0,
+        "120": 2,
+        "250": 0
+      },
+      "pbo": {
+        "skipped": "期數 16 < 32，CSCV 無法切分"
+      },
+      "dsr": {
+        "skipped": "有效觀測 18 < 30，不可檢定"
+      },
+      "fixed_lookback": {
+        "20": {
+          "periods": 16,
+          "gross_per_trip": 0.07219760305891659,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.0664876030589166,
+          "total_return": 1.571032982429784,
+          "annualised": 0.13194839703664085,
+          "sharpe": 0.8298668486592754,
+          "max_drawdown": -0.14788300821819533,
+          "years": 7.619047619047619
+        },
+        "60": {
+          "periods": 16,
+          "gross_per_trip": 0.07060863881726895,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.06489863881726896,
+          "total_return": 1.5822401905751846,
+          "annualised": 0.13259478738790587,
+          "sharpe": 1.0094860420671272,
+          "max_drawdown": -0.12344829365238652,
+          "years": 7.619047619047619
+        },
+        "120": {
+          "periods": 16,
+          "gross_per_trip": 0.07136016527723263,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.06565016527723264,
+          "total_return": 1.5873260069176025,
+          "annualised": 0.13288731485944916,
+          "sharpe": 0.9583706771472815,
+          "max_drawdown": -0.1878606021487107,
+          "years": 7.619047619047619
+        },
+        "250": {
+          "periods": 16,
+          "gross_per_trip": 0.07875279002612542,
+          "cost_per_trip": 0.00571,
+          "net_per_trip": 0.07304279002612543,
+          "total_return": 1.8265322202763827,
+          "annualised": 0.146112052748971,
+          "sharpe": 0.8937137358857324,
+          "max_drawdown": -0.14788300821819533,
+          "years": 7.619047619047619
+        }
+      }
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "0050 買進持有",
+      "total_return": 2.0984555827529463,
+      "annualised": 0.1526268305707763,
+      "max_drawdown": -0.33827635805607836
+    },
+    {
+      "name": "0056 買進持有",
+      "total_return": 1.8956166527430827,
+      "annualised": 0.1428665020047244,
+      "max_drawdown": -0.2585635015498705
+    },
+    {
+      "name": "50/50 買進持有（不再平衡）",
+      "total_return": 1.9970361177480145,
+      "annualised": 0.14781888180456182,
+      "max_drawdown": -0.29547247308125013
+    }
+  ]
+}
