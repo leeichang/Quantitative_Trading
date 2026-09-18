@@ -41,6 +41,27 @@ class HoldingPosition:
     kind: MissingPriceKind
 
 
+def forward_returns(
+    opens: pd.DataFrame,
+    closes: pd.DataFrame,
+    *,
+    holding_days: int,
+) -> pd.DataFrame:
+    """計算同形狀寬表的 T+1 開盤至 T+H 收盤報酬。
+
+    呼叫端必須傳還原價計算報酬；`raw_open` 只用於可負擔性與成本分層。
+    尾端不足 H 日會保留為 NaN，由呼叫端以
+    `complete_holding_decision_dates` 顯式排除，不在此截短索引。
+    """
+    if holding_days < 1:
+        raise ValueError("holding_days 必須至少為 1")
+    if not opens.index.equals(closes.index):
+        raise ValueError("opens 與 closes 的 index 必須完全一致")
+    if not opens.columns.equals(closes.columns):
+        raise ValueError("opens 與 closes 的 columns 必須完全一致")
+    return closes.shift(-holding_days) / opens.shift(-1) - 1.0
+
+
 def find_gap_runs(
     observed_dates: Iterable[pd.Timestamp],
     market_calendar: Sequence[pd.Timestamp],
@@ -123,32 +144,6 @@ def complete_holding_decision_dates(
         for day in decision_dates
         if day in positions and positions[day] + holding_days < len(dates)
     ]
-
-
-def assert_holding_price_completeness(
-    *,
-    decision_date: pd.Timestamp,
-    calendar: Sequence[pd.Timestamp],
-    candidates: Iterable[str],
-    opens: pd.DataFrame,
-    closes: pd.DataFrame,
-    holding_days: int,
-) -> None:
-    """候選池任一股票缺 T+1 開盤或 T+H 收盤時立即失敗。"""
-    entry_day, exit_day = holding_dates(
-        decision_date, calendar, holding_days=holding_days
-    )
-
-    problems: list[str] = []
-    for stock_id in candidates:
-        if not _has_tradeable_price(opens, entry_day, stock_id):
-            problems.append(f"{stock_id} T+1 {entry_day.date()}")
-        if not _has_tradeable_price(closes, exit_day, stock_id):
-            problems.append(f"{stock_id} T+H {exit_day.date()}")
-    if problems:
-        raise DataIntegrityError(
-            f"決策日 {decision_date.date()} 的候選價格不完整：" + ", ".join(problems)
-        )
 
 
 def select_holding_positions(

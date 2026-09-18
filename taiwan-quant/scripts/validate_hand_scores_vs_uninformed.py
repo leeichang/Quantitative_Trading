@@ -59,21 +59,28 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
 from taiwan_quant.config.costs import (  # noqa: E402
     DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
     resolve_tier,
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    forward_returns,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -92,8 +99,6 @@ from taiwan_quant.validation.uninformed import (  # noqa: E402
     draw_weights,
     random_weight_scores,
 )
-
-import scripts.validate_oos_trailing as V  # noqa: E402
 
 HOLDING_DAYS = 40
 DECISION_STRIDE = 40
@@ -138,6 +143,8 @@ def pick_cost(
     raw_opens: pd.DataFrame,
     opens: pd.DataFrame,
     large_members: set[str],
+    *,
+    amount_per_position: float = CAPITAL / N_POSITIONS,
 ) -> float:
     """逐檔成本（禁令 3、4）"""
     rates = []
@@ -145,7 +152,7 @@ def pick_cost(
         tier = resolve_tier(
             actual_price=float(raw_opens.loc[entry_day, stock_id]),
             adjusted_price=float(opens.loc[entry_day, stock_id]),
-            amount=CAPITAL / N_POSITIONS,
+            amount=amount_per_position,
             large=stock_id in large_members,
             is_etf=is_etf(stock_id),
         )
@@ -194,12 +201,13 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
     # 第一版寫 shift(-1 - HOLDING_DAYS)，那是 H+1 天，與
     # diagnose_constraints / cost_floor / position_costs 以及
     # data/integrity.holding_dates 都不一致。
-    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
+    forward = forward_returns(opens, closes, holding_days=HOLDING_DAYS)
 
-    decision_dates = [
-        day for day in calendar[WARMUP::DECISION_STRIDE]
-        if calendar.index(day) + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[WARMUP::DECISION_STRIDE],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS)
     large_at = V.resolve_members(
@@ -214,6 +222,7 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
     }
 
     hand_nets: dict[str, list[float]] = {name: [] for name in families}
+    half_capital_nets: dict[str, list[float]] = {name: [] for name in families}
     draw_nets: dict[str, list[list[float]]] = {
         name: [[] for _ in range(n_draws)] for name in families
     }
@@ -256,11 +265,22 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
             picks = ordered_by(hand)[:N_POSITIONS]
             if len(picks) < N_POSITIONS:
                 hand_nets[name].append(float("nan"))
+                half_capital_nets[name].append(float("nan"))
                 continue
             gross = float(realized[picks].mean())
             hand_nets[name].append(
                 gross - pick_cost(picks, entry_day, raw_opens, opens,
                                   large_members))
+            half_capital_nets[name].append(
+                gross - pick_cost(
+                    picks,
+                    entry_day,
+                    raw_opens,
+                    opens,
+                    large_members,
+                    amount_per_position=CAPITAL / 2 / N_POSITIONS,
+                )
+            )
 
         ranks = cross_sectional_ranks(today)
         for name in families:
@@ -321,6 +341,9 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
         "n_draws": n_draws,
         "n_features": n_features,
         "pool_net_per_trip": float(np.mean(pool_nets)) if pool_nets else 0.0,
+        "decision_dates": used_dates,
+        "net_series_by_family": hand_nets,
+        "half_capital_net_series_by_family": half_capital_nets,
         "null_draws_by_family": null_by_family,
         "families": results,
     }

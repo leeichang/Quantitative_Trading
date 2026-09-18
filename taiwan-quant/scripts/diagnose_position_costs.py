@@ -21,6 +21,10 @@ import scripts.validate_oos_trailing as validation  # noqa: E402
 from taiwan_quant.config.costs import DEFAULT, Tier, resolve_tier  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    forward_returns,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
@@ -124,13 +128,15 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
     adjusted_opens = _frame(prices, "open", calendar)
     actual_opens = _frame(prices, RAW_OPEN_COLUMN, calendar)
     adjusted_closes = _frame(prices, "close", calendar)
-    forward = adjusted_closes.shift(-HOLDING_DAYS) / adjusted_opens.shift(-1) - 1.0
+    forward = forward_returns(
+        adjusted_opens, adjusted_closes, holding_days=HOLDING_DAYS
+    )
 
-    decision_dates = [
-        day
-        for day in calendar[WARMUP_DAYS::HOLDING_DAYS]
-        if calendar.index(day) + 1 + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[WARMUP_DAYS::HOLDING_DAYS],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = validation.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, DEFAULT_UNIVERSE_BASIS
     )

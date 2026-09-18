@@ -62,6 +62,10 @@ from taiwan_quant.config.costs import (
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    forward_returns,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -325,16 +329,16 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
-    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
+    forward = forward_returns(opens, closes, holding_days=HOLDING_DAYS)
     atr_ratios = atr_ratio_frame(by_stock)
     industries = load_industries(db_path)
 
     warmup = 750
-    decision_dates = [
-        day
-        for day in calendar[warmup::DECISION_STRIDE]
-        if calendar.index(day) + 1 + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[warmup::DECISION_STRIDE],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
     )

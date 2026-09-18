@@ -1,4 +1,5 @@
 {
+  "superseded_by": "task08_position_costs_dev.json",
   "start": "2015-01-01",
   "end": "2023-12-29",
   "holding_days": 40,
