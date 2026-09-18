@@ -269,7 +269,7 @@ def main() -> int:
 
     rows: list[dict[str, object]] = []
     for horizon in HORIZONS:
-        forward = forward_returns(opens, closes, horizon=horizon)
+        forward = forward_returns(opens, closes, holding_days=horizon)
         for name, mask in events.items():
             result = event_study(
                 event=name, horizon=horizon, returns=forward,

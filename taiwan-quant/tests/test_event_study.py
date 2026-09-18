@@ -46,7 +46,7 @@ def test_forward_return_enters_at_next_open_and_exits_at_t_plus_h_close():
     opens = _frame([[10.0, 10.0], [11.0, 11.0], [12.0, 12.0], [13.0, 13.0]])
     closes = _frame([[10.5, 10.5], [12.0, 12.0], [13.0, 13.0], [14.0, 14.0]])
 
-    forward = forward_returns(opens, closes, horizon=1)
+    forward = forward_returns(opens, closes, holding_days=1)
 
     assert forward.iloc[0, 0] == pytest.approx(12.0 / 11.0 - 1)
     assert forward.iloc[0, 0] == pytest.approx(0.090909, abs=1e-6)
@@ -57,7 +57,7 @@ def test_forward_return_tail_is_nan_when_the_exit_is_past_the_end():
     opens = _frame([[10.0, 10.0], [11.0, 11.0], [12.0, 12.0]])
     closes = _frame([[10.5, 10.5], [12.0, 12.0], [13.0, 13.0]])
 
-    forward = forward_returns(opens, closes, horizon=2)
+    forward = forward_returns(opens, closes, holding_days=2)
 
     assert np.isnan(forward.iloc[-1, 0])
     assert np.isnan(forward.iloc[-2, 0])
@@ -65,15 +65,22 @@ def test_forward_return_tail_is_nan_when_the_exit_is_past_the_end():
 
 def test_forward_return_rejects_a_zero_horizon():
     frame = _frame([[10.0, 10.0], [11.0, 11.0]])
-    with pytest.raises(EventStudyError, match="horizon"):
-        forward_returns(frame, frame, horizon=0)
+    with pytest.raises(ValueError, match="holding_days"):
+        forward_returns(frame, frame, holding_days=0)
 
 
-def test_forward_return_rejects_mismatched_shapes():
+def test_forward_return_rejects_mismatched_columns():
+    """
+    契約由 `data/integrity.forward_returns` 定義，拋的是 `ValueError`。
+
+    本模組原本自己寫了一份（拋 `EventStudyError`、訊息寫「形狀」），
+    與 Codex 在工作單 09 建的 canonical 版本重複。已刪除改成 re-export，
+    所以這裡改斷言 canonical 的契約。
+    """
     opens = _frame([[10.0, 10.0], [11.0, 11.0]])
     closes = _frame([[10.0], [11.0]], n_cols=1)
-    with pytest.raises(EventStudyError, match="形狀"):
-        forward_returns(opens, closes, horizon=1)
+    with pytest.raises(ValueError, match="columns"):
+        forward_returns(opens, closes, holding_days=1)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -257,3 +264,152 @@ def test_expanding_quantile_rejects_a_zero_refresh_interval():
         expanding_quantile_mask(
             values, quantile=0.5, refresh_every=0, min_observations=1
         )
+
+
+# ══════════════════════════════════════════════════════════════
+# capacity_constrained_fills
+# ══════════════════════════════════════════════════════════════
+
+
+def _grid(rows: list[list[float]], cols: list[str]) -> pd.DataFrame:
+    return pd.DataFrame(
+        rows, index=pd.bdate_range("2020-01-01", periods=len(rows)), columns=cols
+    )
+
+
+def test_capacity_takes_everything_when_slots_are_ample():
+    """位子夠多時不該有任何損失——否則模擬本身有 bug"""
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0, 1.0], [1.0, 1.0]], ["A", "B"])
+    scores = _grid([[0.9, 0.5], [0.9, 0.5]], ["A", "B"])
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=10, holding_days=1
+    )
+
+    assert result.n_offered == 4
+    assert result.n_filled == 4
+    assert result.capture_rate == pytest.approx(1.0)
+
+
+def test_capacity_blocks_when_slots_are_full():
+    """
+    **承重測試。** 1 個位子、持有 3 日：第 0 天吃 1 檔，
+    第 1、2 天全部擋掉，第 3 天位子釋放才能再吃。
+    """
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0, 1.0]] * 4, ["A", "B"])
+    scores = _grid([[0.9, 0.5]] * 4, ["A", "B"])
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=1, holding_days=3
+    )
+
+    assert result.n_offered == 8
+    assert result.n_filled == 2, "只有第 0 天與第 3 天能開倉"
+    assert result.n_blocked_no_slot > 0
+    assert bool(result.fills.iloc[0]["A"])
+    assert not result.fills.iloc[1].any()
+    assert not result.fills.iloc[2].any()
+    assert result.fills.iloc[3].any()
+
+
+def test_capacity_prefers_the_higher_score_when_slots_are_scarce():
+    """位子不足時取分數高的。排序錯了會系統性吃到較差的事件"""
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0, 1.0]], ["A", "B"])
+    scores = _grid([[0.1, 0.9]], ["A", "B"])
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=1, holding_days=1
+    )
+
+    assert bool(result.fills.iloc[0]["B"])
+    assert not bool(result.fills.iloc[0]["A"])
+
+
+def test_capacity_does_not_double_buy_a_held_name():
+    """已在持倉的再觸發是加碼不是分散，要跳過並記錄"""
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0], [1.0], [1.0]], ["A"])
+    scores = _grid([[0.9], [0.9], [0.9]], ["A"])
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=5, holding_days=2
+    )
+
+    assert result.n_filled == 2, "第 0 天買，第 1 天跳過，第 2 天釋放後再買"
+    assert result.n_blocked_held == 1
+
+
+def test_capacity_never_exceeds_the_slot_count():
+    """任何一天的同時持倉都不可超過位子數"""
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    rng = np.random.default_rng(3)
+    cols = [f"S{i}" for i in range(12)]
+    events = _grid(rng.integers(0, 2, (60, 12)).astype(float).tolist(), cols)
+    scores = _grid(rng.random((60, 12)).tolist(), cols)
+    slots, hold = 4, 5
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=slots, holding_days=hold
+    )
+
+    concurrent = result.fills.astype(int).rolling(hold, min_periods=1).sum().sum(axis=1)
+    assert concurrent.max() <= slots, f"同時持倉 {concurrent.max()} 超過 {slots}"
+
+
+@pytest.mark.parametrize("slots, hold", [(0, 1), (-1, 1), (1, 0), (1, -1)])
+def test_capacity_rejects_invalid_parameters(slots, hold):
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0]], ["A"])
+    with pytest.raises(EventStudyError):
+        capacity_constrained_fills(
+            events, events, n_slots=slots, holding_days=hold
+        )
+
+
+def test_capacity_allow_repeat_opens_a_second_lot_in_the_same_name():
+    """
+    `allow_repeat=True` 時同一檔重複觸發會另開位子（加碼），
+    而不是跳過。實測 H=40 時 62.6% 的事件是這種重複。
+
+    ⚠️ 代價是集中度：同一檔可能佔多個位子。
+    """
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0], [1.0], [1.0]], ["A"])
+    scores = _grid([[0.9], [0.9], [0.9]], ["A"])
+
+    skip = capacity_constrained_fills(
+        events, scores, n_slots=5, holding_days=3, allow_repeat=False
+    )
+    repeat = capacity_constrained_fills(
+        events, scores, n_slots=5, holding_days=3, allow_repeat=True
+    )
+
+    assert skip.n_filled == 1, "跳過模式：買一次後被自己擋住"
+    assert skip.n_blocked_held == 2
+    assert repeat.n_filled == 3, "加碼模式：三次都開倉"
+    assert repeat.n_blocked_held == 0
+
+
+def test_capacity_allow_repeat_still_respects_the_slot_cap():
+    """加碼不可以突破位子上限——否則就不是容量受限的模擬了"""
+    from taiwan_quant.validation.event_study import capacity_constrained_fills
+
+    events = _grid([[1.0], [1.0], [1.0], [1.0]], ["A"])
+    scores = _grid([[0.9], [0.9], [0.9], [0.9]], ["A"])
+
+    result = capacity_constrained_fills(
+        events, scores, n_slots=2, holding_days=10, allow_repeat=True
+    )
+
+    assert result.n_filled == 2
+    assert result.n_blocked_no_slot == 2

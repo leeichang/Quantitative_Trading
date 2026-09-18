@@ -50,6 +50,14 @@ forward[T] = closes[T + horizon] / opens[T + 1] - 1
 
 不挑格子。事件 × 持有期是一張網格，**從裡面挑最好的一格就是過擬合**。
 輸出要整張網格一起看，並附多重測試的代價。
+## forward 報酬用 data/integrity 的單一來源
+
+⚠️ 本模組原本自己寫了一份 `forward_returns`，而 Codex 在工作單 09 的
+任務 V 同一天把 canonical 版本建在 `data/integrity`。**兩個「單一來源」
+同時存在，而且兩邊都在寫「重複實作很危險」的文件。**
+
+已刪除本模組那份，改成 re-export。契約由 `data/integrity.forward_returns`
+定義：`close[T+H] / open[T+1] - 1`，參數名是 `holding_days`。
 """
 
 from __future__ import annotations
@@ -58,6 +66,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+
+from taiwan_quant.data.integrity import forward_returns
 
 
 class EventStudyError(ValueError):
@@ -121,31 +131,6 @@ class EventStudyResult:
             f"｜SE {self.standard_error:.3%}"
             f"｜t = {self.t_stat:+.2f}"
         )
-
-
-def forward_returns(
-    opens: pd.DataFrame,
-    closes: pd.DataFrame,
-    *,
-    horizon: int,
-) -> pd.DataFrame:
-    """
-    T+1 開盤進、T+horizon 收盤出。
-
-    **與 `data/integrity.holding_dates` 同一個慣例。** 2026-09-18 之前
-    主線有三個檔案寫成 `shift(-1 - horizon)`，多持有一天，那個錯誤
-    推翻了當時的主要結論——所以這裡只有一份實作。
-
-    Raises:
-        EventStudyError: horizon < 1，或兩張表的形狀不一致
-    """
-    if horizon < 1:
-        raise EventStudyError(f"horizon 至少為 1，得到 {horizon}")
-    if opens.shape != closes.shape:
-        raise EventStudyError(
-            f"opens 與 closes 形狀必須相同，得到 {opens.shape} 與 {closes.shape}"
-        )
-    return closes.shift(-horizon) / opens.shift(-1) - 1.0
 
 
 def per_date_mean(
@@ -259,3 +244,117 @@ def expanding_quantile_mask(
         columns=values.columns,
     )
     return (values > threshold_frame) & threshold_frame.notna()
+
+
+@dataclass(frozen=True)
+class CapacityResult:
+    """容量受限模擬的結果。"""
+
+    fills: pd.DataFrame
+    """實際成交的 (股票, 日) 布林矩陣。`event_study` 可直接吃"""
+
+    n_offered: int
+    """事件總數"""
+
+    n_filled: int
+    """實際吃下的數量"""
+
+    n_blocked_no_slot: int
+    """位子滿而錯過的"""
+
+    n_blocked_held: int
+    """已在持倉中而跳過的"""
+
+    @property
+    def capture_rate(self) -> float:
+        if self.n_offered == 0:
+            return float("nan")
+        return self.n_filled / self.n_offered
+
+
+def capacity_constrained_fills(
+    event_mask: pd.DataFrame,
+    scores: pd.DataFrame,
+    *,
+    n_slots: int,
+    holding_days: int,
+    allow_repeat: bool = False,
+) -> CapacityResult:
+    """
+    用固定位子數模擬「先到先得」，回傳實際吃得到的事件。
+
+    研究測的是**全抓**的平均超額。實際帳戶有位子上限：40 萬在每檔最低
+    2 萬的限制下只有 20 個位子，而事件 2.7 檔/日 × 持有 40 日 需要 108 檔。
+
+    ⚠️ **這是槽位排隊，而槽位排隊有路徑相依**
+    （見 `validation/path_dependence.py`）。這裡用它不是因為它好，
+    而是因為**那就是真實帳戶的樣子**：位子滿了就是開不了倉。
+
+    選擇偏誤是本函式要量的東西：事件會叢聚，熱門日一次噴好幾檔把位子
+    填滿，後面幾天的事件全部錯過。若熱門日的事件品質較差，
+    實際吃到的平均會低於全抓的平均。
+
+    Args:
+        event_mask: 事件是否發生
+        scores: 排序依據，位子不足時取高的
+        n_slots: 同時可持有的檔數
+        holding_days: 持有交易日數
+        allow_repeat: 已持有的名字再次觸發時，`False` 跳過（分散），
+            `True` 另開一個位子（加碼）。實測 H=40 時 62.6% 的事件是
+            同一檔在持有期內重複觸發，所以這個選擇很貴。
+            ⚠️ 開成 `True` 會讓單一名字佔用多個位子，集中度上升——
+            那是不同的風險結構，不是免費的改進。
+
+    Raises:
+        EventStudyError: 參數不合法，或兩張表形狀不一致
+    """
+    if n_slots < 1:
+        raise EventStudyError(f"n_slots 至少為 1，得到 {n_slots}")
+    if holding_days < 1:
+        raise EventStudyError(f"holding_days 至少為 1，得到 {holding_days}")
+    if event_mask.shape != scores.shape:
+        raise EventStudyError(
+            f"事件與分數形狀必須相同，得到 {event_mask.shape} 與 {scores.shape}"
+        )
+
+    fills = pd.DataFrame(False, index=event_mask.index, columns=event_mask.columns)
+    open_lots: list[tuple[str, int]] = []
+    offered = filled = blocked_slot = blocked_held = 0
+
+    for position, day in enumerate(event_mask.index):
+        # 先釋放到期的位子，同一天才可能有新倉接上
+        open_lots = [lot for lot in open_lots if lot[1] > position]
+        held = {sid for sid, _ in open_lots}
+
+        today = [
+            sid for sid in event_mask.columns if bool(event_mask.at[day, sid])
+        ]
+        if not today:
+            continue
+        offered += len(today)
+        ranked = sorted(
+            today,
+            key=lambda sid: (
+                -float(scores.at[day, sid])
+                if np.isfinite(scores.at[day, sid]) else 0.0
+            ),
+        )
+        for sid in ranked:
+            if not allow_repeat and sid in held:
+                blocked_held += 1
+                continue
+            if len(open_lots) >= n_slots:
+                blocked_slot += 1
+                continue
+            fills.at[day, sid] = True
+            open_lots.append((sid, position + holding_days))
+            held.add(sid)
+            filled += 1
+
+    return CapacityResult(
+        fills=fills,
+        n_offered=offered,
+        n_filled=filled,
+        n_blocked_no_slot=blocked_slot,
+        n_blocked_held=blocked_held,
+    )
