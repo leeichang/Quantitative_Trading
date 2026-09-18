@@ -97,6 +97,7 @@
 | [「超過隨機 95% 分位」這句話該退休](2026-09-18_超過隨機95分位這句話該退休.md) | `validation/uninformed.py`、`taiwan-quant/CLAUDE.md` | 換成嚴格虛無後，兩種搬法給出相反判定——**結論不能重算，只能撤回** |
 | [信賴區間讓累積報酬失去意義](2026-09-18_信賴區間讓累積報酬失去意義.md) | `validation/bootstrap.py`、`scripts/diagnose_bootstrap_intervals.py` | 樣本外 +138.83% 的 95% 區間是 [−13.3%, +587.2%]，**七個基準全落在裡面** |
 | [門檻形同虛設與路徑相依的根因](2026-09-18_門檻形同虛設與路徑相依的根因.md) | `validation/path_dependence.py`、`backtest/portfolio_sim.py`、`validation/thresholds.py` | 門檻站在瓶頸下游（訊號 ×18 而報酬不變）；路徑相依需要**出場日錯開** |
+| [融資暴增之後的超額報酬](2026-09-18_融資暴增之後的超額報酬.md) | `validation/event_study.py`、`scripts/diagnose_event_reactions.py` | **第一個通過多重測試的正向結果**：+1.709%／趟、t=5.21、不是動能；但只有 H=40 淨值為正 |
 
 ---
 
