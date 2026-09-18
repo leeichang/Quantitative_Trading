@@ -183,11 +183,15 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
         ).reindex(calendar)
 
     opens, closes, raw_opens = frame("open"), frame("close"), frame(RAW_OPEN_COLUMN)
-    forward = closes.shift(-1 - HOLDING_DAYS) / opens.shift(-1) - 1
+    # T+1 開盤進、T+HOLDING_DAYS 收盤出 = HOLDING_DAYS 天持有。
+    # 第一版寫 shift(-1 - HOLDING_DAYS)，那是 H+1 天，與
+    # diagnose_constraints / cost_floor / position_costs 以及
+    # data/integrity.holding_dates 都不一致。
+    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
 
     decision_dates = [
         day for day in calendar[WARMUP::DECISION_STRIDE]
-        if calendar.index(day) + 1 + HOLDING_DAYS < len(calendar)
+        if calendar.index(day) + HOLDING_DAYS < len(calendar)
     ]
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS)

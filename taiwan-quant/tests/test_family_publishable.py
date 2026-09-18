@@ -52,9 +52,13 @@ def test_mean_reversion_states_the_measured_reason() -> None:
     """
     reason = family("均值回歸").unpublishable_reason
 
-    assert "0.49" in reason and "10" in reason, "要帶上實測數字"
-    assert "2026-09-17" in reason, "要帶上日期"
+    assert "0.30" in reason and "18" in reason, "要帶上實測數字"
+    assert "2026-09-18" in reason, "要帶上日期"
     assert "原理說明" in reason, "要指向依據文件"
+    # 舊數字必須保留並標明已更正，不可靜默替換
+    assert "0.49" in reason and "已更正" in reason, (
+        "更正後要留下舊數字與更正說明，否則讀者無從知道它變過"
+    )
 
 
 @pytest.mark.unit

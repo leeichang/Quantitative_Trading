@@ -185,8 +185,21 @@ def build_dataset_for_model(
     Returns:
         Dataset
 
-    標籤是 **T+1 開盤買、T+1+horizon 收盤賣**的報酬，與
-    `validate_oos_momentum.py` 完全一致——否則兩者不可比較。
+    標籤是 **T+1 開盤買、T+horizon 收盤賣**的報酬。
+
+    ## ⚠️ 第一版多算一天
+
+    原本寫 `closes.shift(-1 - horizon)`，也就是 T+1+horizon 收盤出場——
+    **那是 horizon + 1 天的持有期**。
+
+    正確的推導：T+1 開盤進、X 收盤出，持有天數 = X − T。要 horizon 天
+    就是 X = T + horizon。
+
+    專案自己的算術也證實：CLAUDE.md 的持有期表寫「20 日 → 每年 12.6 趟」，
+    252 / 20 = 12.6；若是 21 天會是 12.0。
+
+    而 `data/integrity.holding_dates` 是這件事的單一來源：
+    進場 `decision_index + 1`、出場 `decision_index + holding_days`。
     """
     features = build_features(by_stock)
     opens = pd.DataFrame(
@@ -195,7 +208,7 @@ def build_dataset_for_model(
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
-    forward = (closes.shift(-1 - horizon) / opens.shift(-1) - 1).stack(
+    forward = (closes.shift(-horizon) / opens.shift(-1) - 1).stack(
         future_stack=True
     )
     forward.index.names = ["date", "stock_id"]

@@ -199,12 +199,22 @@ def test_build_features_rejects_empty_input() -> None:
 @pytest.mark.unit
 def test_label_matches_the_backtest_definition() -> None:
     """
-    標籤必須是 **T+1 開盤買、T+1+horizon 收盤賣**，與
-    `validate_oos_momentum.py` 的 `closes.shift(-H)/opens.shift(-1)-1`
-    語意一致——否則模型與手工分數不可比較。
+    標籤必須是 **T+1 開盤買、T+horizon 收盤賣**。
+
+    ## ⚠️ 這個測試第一版釘住了錯的慣例
+
+    原本斷言 `closes[2] / opens[1]`，也就是 T+1+horizon 出場——那是
+    horizon + 1 天。程式與測試是同時寫的，兩邊照同一個誤解，所以測試
+    通過而行為是錯的。
+
+    正確推導：T+1 開盤進、X 收盤出，持有天數 = X − T。要 horizon 天
+    就是 X = T + horizon。`data/integrity.holding_dates` 是單一來源：
+    進場 `decision_index + 1`、出場 `decision_index + holding_days`。
 
     手算：position=0、horizon=1
-        進場 = opens[1]，出場 = closes[2]
+        進場 = opens[1] = 11.0
+        出場 = closes[1] = 12.0      ← 不是 closes[2]
+        報酬 = 12/11 − 1 = +9.0909%
     """
     bars = pd.DataFrame(
         {
@@ -221,7 +231,47 @@ def test_label_matches_the_backtest_definition() -> None:
     dataset = build_dataset_for_model({"A": bars}, calendar, horizon=1)
     value = dataset.forward_return.xs("A", level="stock_id").iloc[0]
 
-    assert value == pytest.approx(13.0 / 11.0 - 1)
+    assert value == pytest.approx(12.0 / 11.0 - 1)
+    assert value == pytest.approx(0.090909, abs=1e-6)
+    # 多算一天會得到 13/11 − 1 = +18.18%，差一倍
+    assert value != pytest.approx(13.0 / 11.0 - 1)
+
+
+@pytest.mark.unit
+def test_label_agrees_with_the_canonical_holding_dates() -> None:
+    """
+    標籤的出場日必須與 `data/integrity.holding_dates` 完全一致。
+
+    那個函式是持有期邊界的單一來源。兩份實作就是兩份會漂移的規則——
+    這次的 off-by-one 正是因為它們各自算。
+    """
+    from taiwan_quant.data.integrity import holding_dates
+
+    rng = np.random.default_rng(20260918)
+    n = 300
+    close = 100 * np.cumprod(1 + rng.normal(0.0002, 0.01, n))
+    bars = pd.DataFrame(
+        {
+            "open": close * 0.999, "high": close * 1.01,
+            "low": close * 0.99, "close": close,
+            "volume": np.full(n, 1e6),
+        },
+        index=pd.bdate_range("2020-01-01", periods=n),
+    )
+    calendar = list(bars.index)
+    horizon = 40
+
+    dataset = build_dataset_for_model({"A": bars}, calendar, horizon=horizon)
+    position = 100
+    entry_day, exit_day = holding_dates(
+        calendar[position], calendar, holding_days=horizon)
+
+    expected = (
+        bars["close"].loc[exit_day] / bars["open"].loc[entry_day] - 1
+    )
+    actual = dataset.forward_return.loc[(calendar[position], "A")]
+
+    assert actual == pytest.approx(expected)
 
 
 # ══════════════════════════════════════════════════════════════
