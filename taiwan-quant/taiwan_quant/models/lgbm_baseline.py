@@ -62,6 +62,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from taiwan_quant.data.integrity import forward_returns
 from taiwan_quant.features.chips import build_chips
 from taiwan_quant.features.technical import build_technical
 
@@ -208,7 +209,7 @@ def build_dataset_for_model(
     closes = pd.DataFrame(
         {sid: bars["close"].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
-    forward = (closes.shift(-horizon) / opens.shift(-1) - 1).stack(
+    forward = forward_returns(opens, closes, holding_days=horizon).stack(
         future_stack=True
     )
     forward.index.names = ["date", "stock_id"]

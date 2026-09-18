@@ -59,21 +59,28 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
 from taiwan_quant.config.costs import (  # noqa: E402
     DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
     resolve_tier,
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    forward_returns,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -92,8 +99,6 @@ from taiwan_quant.validation.uninformed import (  # noqa: E402
     draw_weights,
     random_weight_scores,
 )
-
-import scripts.validate_oos_trailing as V  # noqa: E402
 
 HOLDING_DAYS = 40
 DECISION_STRIDE = 40
@@ -194,12 +199,13 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
     # 第一版寫 shift(-1 - HOLDING_DAYS)，那是 H+1 天，與
     # diagnose_constraints / cost_floor / position_costs 以及
     # data/integrity.holding_dates 都不一致。
-    forward = closes.shift(-HOLDING_DAYS) / opens.shift(-1) - 1
+    forward = forward_returns(opens, closes, holding_days=HOLDING_DAYS)
 
-    decision_dates = [
-        day for day in calendar[WARMUP::DECISION_STRIDE]
-        if calendar.index(day) + HOLDING_DAYS < len(calendar)
-    ]
+    decision_dates = complete_holding_decision_dates(
+        calendar,
+        calendar[WARMUP::DECISION_STRIDE],
+        holding_days=HOLDING_DAYS,
+    )
     members_at = V.resolve_members(
         decision_dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS)
     large_at = V.resolve_members(

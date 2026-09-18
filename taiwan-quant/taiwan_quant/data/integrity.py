@@ -41,6 +41,27 @@ class HoldingPosition:
     kind: MissingPriceKind
 
 
+def forward_returns(
+    opens: pd.DataFrame,
+    closes: pd.DataFrame,
+    *,
+    holding_days: int,
+) -> pd.DataFrame:
+    """計算同形狀寬表的 T+1 開盤至 T+H 收盤報酬。
+
+    呼叫端必須傳還原價計算報酬；`raw_open` 只用於可負擔性與成本分層。
+    尾端不足 H 日會保留為 NaN，由呼叫端以
+    `complete_holding_decision_dates` 顯式排除，不在此截短索引。
+    """
+    if holding_days < 1:
+        raise ValueError("holding_days 必須至少為 1")
+    if not opens.index.equals(closes.index):
+        raise ValueError("opens 與 closes 的 index 必須完全一致")
+    if not opens.columns.equals(closes.columns):
+        raise ValueError("opens 與 closes 的 columns 必須完全一致")
+    return closes.shift(-holding_days) / opens.shift(-1) - 1.0
+
+
 def find_gap_runs(
     observed_dates: Iterable[pd.Timestamp],
     market_calendar: Sequence[pd.Timestamp],

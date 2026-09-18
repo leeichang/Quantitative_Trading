@@ -54,17 +54,20 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
 from taiwan_quant.config.costs import (  # noqa: E402
     DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
     FEE_DISCOUNT_DEFAULT,
     CostModel,
     Tier,
@@ -72,6 +75,10 @@ from taiwan_quant.config.costs import (  # noqa: E402
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    forward_returns,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
     RAW_OPEN_COLUMN,
@@ -82,8 +89,6 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
-
-import scripts.validate_oos_trailing as V  # noqa: E402
 
 FAMILY = "動能突破"
 CAPITAL = 400_000.0
@@ -360,12 +365,12 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
 
     forward_cache, members_at_cache, large_at_cache = {}, {}, {}
     for horizon in H_GRID:
-        forward_cache[horizon] = closes.shift(-horizon) / opens.shift(-1) - 1
-        dates = [
-            day
-            for day in calendar[WARMUP::horizon]
-            if calendar.index(day) + 1 + horizon < len(calendar)
-        ]
+        forward_cache[horizon] = forward_returns(
+            opens, closes, holding_days=horizon
+        )
+        dates = complete_holding_decision_dates(
+            calendar, calendar[WARMUP::horizon], holding_days=horizon
+        )
         members_at_cache[horizon] = V.resolve_members(
             dates, db_path, UNIVERSE_SIZE, UNIVERSE_BASIS
         )
