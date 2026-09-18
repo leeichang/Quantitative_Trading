@@ -96,6 +96,7 @@
 | [持有期慣例的清查](2026-09-18_持有期慣例的清查.md) | `data/integrity.py`、六支算 forward 的腳本 | 一個宣稱有單一來源的註解，和一個生產碼零呼叫者的守門 |
 | [「超過隨機 95% 分位」這句話該退休](2026-09-18_超過隨機95分位這句話該退休.md) | `validation/uninformed.py`、`taiwan-quant/CLAUDE.md` | 換成嚴格虛無後，兩種搬法給出相反判定——**結論不能重算，只能撤回** |
 | [信賴區間讓累積報酬失去意義](2026-09-18_信賴區間讓累積報酬失去意義.md) | `validation/bootstrap.py`、`scripts/diagnose_bootstrap_intervals.py` | 樣本外 +138.83% 的 95% 區間是 [−13.3%, +587.2%]，**七個基準全落在裡面** |
+| [門檻形同虛設與路徑相依的根因](2026-09-18_門檻形同虛設與路徑相依的根因.md) | `validation/path_dependence.py`、`backtest/portfolio_sim.py`、`validation/thresholds.py` | 門檻站在瓶頸下游（訊號 ×18 而報酬不變）；路徑相依需要**出場日錯開** |
 
 ---
 
