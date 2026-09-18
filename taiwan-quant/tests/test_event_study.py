@@ -18,6 +18,7 @@ import pandas as pd
 import pytest
 
 from taiwan_quant.validation.event_study import (
+    capacity_economics,
     EventStudyError,
     event_study,
     expanding_quantile_mask,
@@ -215,6 +216,28 @@ def test_event_study_standard_error_shrinks_with_more_dates():
     assert ratio == pytest.approx(np.sqrt(10), rel=0.4), (
         f"SE 比應接近 √10 = 3.16，得到 {ratio:.2f}"
     )
+
+
+def test_capacity_economics_subtracts_same_day_fill_costs() -> None:
+    """手算兩日：毛配對為 -5%、+5%，成本 1%、2%，淨為 -6%、+3%。"""
+    returns = _frame([[0.10, 0.20], [0.30, 0.40]])
+    fills = _frame([[1.0, 0.0], [0.0, 1.0]])
+    universe = _frame([[1.0, 1.0], [1.0, 1.0]])
+    costs = _frame([[0.01, 0.99], [0.99, 0.02]])
+
+    result = capacity_economics(
+        returns=returns,
+        fills=fills,
+        universe_mask=universe,
+        cost_rates=costs,
+    )
+
+    assert result.gross_paired == pytest.approx((-0.05, 0.05))
+    assert result.net_paired == pytest.approx((-0.06, 0.03))
+    assert result.gross_excess == pytest.approx(0.0)
+    assert result.cost_per_trip == pytest.approx(0.015)
+    assert result.net_per_trip == pytest.approx(-0.015)
+    assert result.net_standard_deviation == pytest.approx(np.std([-0.06, 0.03], ddof=1))
 
 
 # ══════════════════════════════════════════════════════════════
