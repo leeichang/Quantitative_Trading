@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import math
+import sqlite3
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
+from pathlib import Path
 
 import pandas as pd
 
@@ -26,6 +28,26 @@ class HoldingSettlement:
     kind: MissingPriceKind
     gross_return: float | None
     exit_date: pd.Timestamp | None
+
+
+def load_delisted_dates(
+    db_path: Path,
+    *,
+    as_of: date,
+) -> dict[str, date | None]:
+    """載入截至 as_of 已知的下市日，避免倒用未來下市事件。"""
+    with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as con:
+        rows = con.execute(
+            "SELECT stock_id, delisted_date FROM stock_master"
+        ).fetchall()
+    return {
+        stock_id: (
+            parsed if (parsed := date.fromisoformat(value)) <= as_of else None
+        )
+        if value
+        else None
+        for stock_id, value in rows
+    }
 
 
 def settle_holding_period(

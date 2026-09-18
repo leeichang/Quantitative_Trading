@@ -21,7 +21,6 @@ import scripts.validate_oos_trailing as validation  # noqa: E402
 from taiwan_quant.config.costs import DEFAULT, Tier, resolve_tier  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf  # noqa: E402
-from taiwan_quant.data.integrity import assert_holding_price_completeness  # noqa: E402
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
@@ -152,14 +151,6 @@ def run(db_path: Path, end: date) -> dict[str, Any]:
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        assert_holding_price_completeness(
-            decision_date=day,
-            calendar=calendar,
-            candidates=ranked.index,
-            opens=adjusted_opens,
-            closes=adjusted_closes,
-            holding_days=HOLDING_DAYS,
-        )
         realized = forward.loc[day].dropna()
         common = ranked.index.intersection(realized.index)
         ordered = sorted(

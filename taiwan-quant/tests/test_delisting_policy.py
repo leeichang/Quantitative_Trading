@@ -2,12 +2,37 @@
 
 from __future__ import annotations
 
+import sqlite3
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from taiwan_quant.validation.delisting import MissingPriceKind, settle_holding_period
+from taiwan_quant.validation.delisting import (
+    MissingPriceKind,
+    load_delisted_dates,
+    settle_holding_period,
+)
+
+
+@pytest.mark.unit
+def test_load_delisted_dates_hides_events_after_as_of(tmp_path: Path) -> None:
+    db_path = tmp_path / "history.db"
+    with sqlite3.connect(db_path) as con:
+        con.execute("CREATE TABLE stock_master (stock_id TEXT, delisted_date TEXT)")
+        con.executemany(
+            "INSERT INTO stock_master VALUES (?, ?)",
+            [("OLD", "2020-01-02"), ("FUTURE", "2025-01-02"), ("LIVE", None)],
+        )
+
+    result = load_delisted_dates(db_path, as_of=date(2023, 12, 29))
+
+    assert result == {
+        "OLD": date(2020, 1, 2),
+        "FUTURE": None,
+        "LIVE": None,
+    }
 
 
 @pytest.mark.unit
