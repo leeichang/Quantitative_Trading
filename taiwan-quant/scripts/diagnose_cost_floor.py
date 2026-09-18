@@ -78,6 +78,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.integrity import (  # noqa: E402
     complete_holding_decision_dates,
     forward_returns,
+    select_holding_positions,
 )
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
@@ -89,6 +90,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 FAMILY = "動能突破"
 CAPITAL = 400_000.0
@@ -127,8 +129,10 @@ def sweep(
     members_at_cache: dict[int, dict],
     large_at_cache: dict[int, dict],
     opens: pd.DataFrame,
+    closes: pd.DataFrame,
     raw_opens: pd.DataFrame,
-    forward_cache: dict[int, pd.DataFrame],
+    _forward_cache: dict[int, pd.DataFrame],
+    delisted_dates: dict[str, date | None],
     cost: CostModel,
     include_etfs: bool,
 ) -> dict | None:
@@ -138,7 +142,6 @@ def sweep(
     決策間隔等於持有期：不重疊，每筆標籤在下一個決策日前就揭曉。
     """
     amount = CAPITAL / n_positions
-    forward = forward_cache[holding_days]
     members_at = members_at_cache[holding_days]
     large_at = large_at_cache[holding_days]
     decision_dates = [
@@ -157,8 +160,14 @@ def sweep(
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        realized = forward.loc[day].dropna()
-        common = ranked.index.intersection(realized.index)
+        entry_day = calendar[calendar.index(day) + 1]
+        common = [
+            sid
+            for sid in ranked.index
+            if sid in raw_opens.columns
+            and np.isfinite(raw_opens.loc[entry_day, sid])
+            and raw_opens.loc[entry_day, sid] > 0
+        ]
         if len(common) < MIN_CANDIDATES:
             continue
 
@@ -170,7 +179,18 @@ def sweep(
             ),
         )[:n_positions]
 
-        entry_day = calendar[calendar.index(day) + 1]
+        settlements = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=picks,
+            opens=opens,
+            closes=closes,
+            holding_days=holding_days,
+            n_positions=len(picks),
+            delisted_dates=delisted_dates,
+        )
+        picks = [position.stock_id for position in settlements]
+        gross = float(np.mean([position.gross_return for position in settlements]))
         large_members = large_at.get(day, set())
         rates, whole = [], 0
         for sid in picks:
@@ -198,7 +218,7 @@ def sweep(
         periods.append(
             {
                 "decision_date": str(day.date()),
-                "gross": float(realized[picks].mean()),
+                "gross": gross,
                 "cost": float(np.mean(rates)),
                 "whole_ratio": whole / len(rates),
             }
@@ -362,6 +382,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
 
     opens, closes = frame("open"), frame("close")
     raw_opens = frame(RAW_OPEN_COLUMN)
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     forward_cache, members_at_cache, large_at_cache = {}, {}, {}
     for horizon in H_GRID:
@@ -383,8 +404,8 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     for n_positions in N_GRID:
         for horizon in H_GRID:
             item = sweep(n_positions, horizon, calendar, scores, members_at_cache,
-                         large_at_cache, opens, raw_opens, forward_cache,
-                         DEFAULT_COST, include_etfs=False)
+                         large_at_cache, opens, closes, raw_opens, forward_cache,
+                         delisted_dates, DEFAULT_COST, include_etfs=False)
             if item is not None:
                 grid.append(item)
         print(f"  N={n_positions} 完成", flush=True)
@@ -392,8 +413,9 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     discounts = []
     for discount in DISCOUNT_GRID:
         item = sweep(CURRENT_N, CURRENT_H, calendar, scores, members_at_cache,
-                     large_at_cache, opens, raw_opens, forward_cache,
-                     CostModel(fee_discount=discount), include_etfs=False)
+                     large_at_cache, opens, closes, raw_opens, forward_cache,
+                     delisted_dates, CostModel(fee_discount=discount),
+                     include_etfs=False)
         if item is not None:
             discounts.append({"discount": discount,
                               "cost_per_trip": item["cost_per_trip"]})
@@ -407,8 +429,8 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     etf = []
     for include in (False, True):
         item = sweep(CURRENT_N, CURRENT_H, calendar, scores, members_at_cache,
-                     large_at_cache, opens, raw_opens, forward_cache,
-                     DEFAULT_COST, include_etfs=include)
+                     large_at_cache, opens, closes, raw_opens, forward_cache,
+                     delisted_dates, DEFAULT_COST, include_etfs=include)
         if item is not None:
             etf.append({"include_etfs": include,
                         "whole_ratio": item["whole_ratio"],

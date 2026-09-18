@@ -65,6 +65,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.integrity import (  # noqa: E402
     complete_holding_decision_dates,
     forward_returns,
+    select_holding_positions,
 )
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
@@ -89,6 +90,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 FAMILY = "動能突破"
 HOLDING_DAYS = 40
@@ -157,6 +159,7 @@ def evaluate(
     forward: pd.DataFrame,
     atr_ratios: pd.DataFrame,
     industries: dict[str, str],
+    delisted_dates: dict[str, date | None],
 ) -> dict:
     """跑一組約束，回傳可比較的彙總"""
     periods: list[dict] = []
@@ -170,8 +173,14 @@ def evaluate(
         ranked = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        realized = forward.loc[day].dropna()
-        common = ranked.index.intersection(realized.index)
+        entry_day = calendar[calendar.index(day) + 1]
+        common = [
+            sid
+            for sid in ranked.index
+            if sid in actual_opens.columns
+            and np.isfinite(actual_opens.loc[entry_day, sid])
+            and actual_opens.loc[entry_day, sid] > 0
+        ]
         if len(common) < MIN_CANDIDATES:
             continue
 
@@ -207,8 +216,18 @@ def evaluate(
             continue
 
         ids = [candidate.stock_id for candidate in picked]
-        gross = float(realized[ids].mean())
-        entry_day = calendar[calendar.index(day) + 1]
+        settlements = select_holding_positions(
+            decision_date=day,
+            calendar=calendar,
+            ordered_candidates=ids,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=len(ids),
+            delisted_dates=delisted_dates,
+        )
+        ids = [position.stock_id for position in settlements]
+        gross = float(np.mean([position.gross_return for position in settlements]))
         large_members = large_at.get(day, set())
 
         # 兩種資金配置的成本不同：固定 1/N 每檔只有 4 萬（多走零股），
@@ -345,6 +364,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
     large_at = V.resolve_members(
         decision_dates, db_path, 50, UNIVERSE_BASIS
     )
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
 
     results = {}
     for name, configuration in CONFIGS.items():
@@ -361,6 +381,7 @@ def run(db_path: Path, end: date, unlock: bool, reason: str | None) -> dict:
             forward,
             atr_ratios,
             industries,
+            delisted_dates,
         )
         print(f"  {name} 完成", flush=True)
     return {

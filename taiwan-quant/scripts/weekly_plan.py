@@ -31,6 +31,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from taiwan_quant.config.costs import DEFAULT, Tier  # noqa: E402
+from taiwan_quant.config.env import load_env  # noqa: E402
+from taiwan_quant.data.integrity import assert_plan_positions_tradeable  # noqa: E402
 from taiwan_quant.data.loader import load_prices, load_universe  # noqa: E402
 from taiwan_quant.data.universe_history import (  # noqa: E402
     Provenance,
@@ -52,7 +54,6 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_calibrator,
     reliability_report,
 )
-from taiwan_quant.config.env import load_env  # noqa: E402
 
 STRATEGY_VERSION = "momentum_baseline_tb5d@v0.2.0"
 
@@ -308,7 +309,11 @@ def main() -> None:
         tiers = {
             sid: Tier(resolution.tier_of(sid)) for sid in stock_ids
         }
-        provenance = "真實成分股快照" if resolution.provenance is Provenance.REAL else "市值排名代理"
+        provenance = (
+            "真實成分股快照"
+            if resolution.provenance is Provenance.REAL
+            else "市值排名代理"
+        )
         universe_note = f"標的池：{provenance}（{len(stock_ids)} 檔）"
 
         print(f"標的池來源  {resolution.provenance.value}")
@@ -419,6 +424,13 @@ def main() -> None:
 
     # ── 選股 ──
     result = select_portfolio(candidates, args.capital, correlations, cost=DEFAULT)
+    decision_date = max(pd.Timestamp(bars.index.max()) for bars in bars_by_stock.values())
+    assert_plan_positions_tradeable(
+        stock_ids=[position.candidate.stock_id for position in result.positions],
+        decision_date=decision_date,
+        bars_by_stock=bars_by_stock,
+    )
+    print("實際持倉價格守門觸發 0 次")
 
     print("─" * 72)
     print("選股結果")
@@ -433,7 +445,6 @@ def main() -> None:
     print()
 
     # ── 訊息 ──
-    decision_date = signals[0].decision_date
     week_id = f"{decision_date.year}W{decision_date.isocalendar().week:02d}"
 
     message = format_weekly_plan(

@@ -46,7 +46,9 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from taiwan_quant.config.costs import DEFAULT, Tier  # noqa: E402
+from taiwan_quant.config.env import load_env  # noqa: E402
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
+from taiwan_quant.data.integrity import assert_plan_positions_tradeable  # noqa: E402
 from taiwan_quant.data.loader import load_chips, load_prices, load_universe  # noqa: E402
 from taiwan_quant.features.technical import build_technical  # noqa: E402
 from taiwan_quant.labeling.trail_width import derive_trail_width  # noqa: E402
@@ -61,7 +63,10 @@ from taiwan_quant.ranking.trailing_portfolio import (  # noqa: E402
     TrailingCandidate,
     select_trailing_portfolio,
 )
-from taiwan_quant.strategies.families import STRATEGY_FAMILIES  # noqa: E402
+from taiwan_quant.strategies.families import (  # noqa: E402
+    STRATEGY_FAMILIES,
+    StrategyFamily,
+)
 from taiwan_quant.validation.binning import find_bin  # noqa: E402
 from taiwan_quant.validation.calibration import (  # noqa: E402
     CalibrationError,
@@ -69,7 +74,6 @@ from taiwan_quant.validation.calibration import (  # noqa: E402
     fit_return_calibrator,
     return_reliability_report,
 )
-from taiwan_quant.config.env import load_env  # noqa: E402
 
 STRATEGY_VERSION = "trailing_stop_portfolio@v0.1.0"
 
@@ -113,7 +117,7 @@ class TrailSignal:
 
 def build_calibration_set(
     by_stock: dict[str, pd.DataFrame],
-    family,
+    family: StrategyFamily,
     horizon: int,
     train_end: pd.Timestamp,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -156,7 +160,7 @@ def build_calibration_set(
 def build_signal(
     stock_id: str,
     bars: pd.DataFrame,
-    family,
+    family: StrategyFamily,
     horizon: int,
     calibrator: ReturnCalibrator,
     volatility_pct: float,
@@ -377,6 +381,13 @@ def main() -> None:
     result = select_trailing_portfolio(
         candidates, args.capital, correlations, cost=DEFAULT, edge_z=args.edge_z
     )
+    decision_date = max(pd.Timestamp(bars.index.max()) for bars in by_stock.values())
+    assert_plan_positions_tradeable(
+        stock_ids=[position.candidate.stock_id for position in result.positions],
+        decision_date=decision_date,
+        bars_by_stock=by_stock,
+    )
+    print("實際持倉價格守門觸發 0 次")
 
     print("─" * 80)
     print("選股結果")

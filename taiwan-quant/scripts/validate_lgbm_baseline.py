@@ -74,6 +74,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.integrity import (  # noqa: E402
     complete_holding_decision_dates,
     forward_returns,
+    select_holding_positions,
 )
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
@@ -93,6 +94,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 from taiwan_quant.validation.stats import deflated_sharpe_ratio  # noqa: E402
 
 FAMILY = "動能突破"
@@ -222,6 +224,7 @@ def run(db_path: Path, end: date) -> dict:
         {sid: bars[col].astype(float) for sid, bars in by_stock.items()}
     ).reindex(calendar)
     opens, closes, raw_opens = frame("open"), frame("close"), frame(RAW_OPEN_COLUMN)
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
     # T+1 開盤進、T+HOLDING_DAYS 收盤出 = HOLDING_DAYS 天持有。
     # 第一版寫 shift(-1 - HOLDING_DAYS)，那是 H+1 天，與
     # diagnose_constraints / cost_floor / position_costs 以及
@@ -253,8 +256,8 @@ def run(db_path: Path, end: date) -> dict:
         hand = pd.Series(
             {sid: scores[sid].get(day, np.nan) for sid in allowed if sid in scores}
         ).dropna()
-        realized = forward.loc[day].dropna()
-        common = hand.index.intersection(realized.index)
+        realized = forward.loc[day]
+        common = hand.index
         if len(common) < MIN_CANDIDATES:
             continue
 
@@ -276,7 +279,20 @@ def run(db_path: Path, end: date) -> dict:
             historical_large: set[str] = large_members,
             decision_day: pd.Timestamp = day,
         ) -> None:
-            gross = float(realized_period[picks].mean())
+            settlements = select_holding_positions(
+                decision_date=decision_day,
+                calendar=calendar,
+                ordered_candidates=picks,
+                opens=opens,
+                closes=closes,
+                holding_days=HOLDING_DAYS,
+                n_positions=len(picks),
+                delisted_dates=delisted_dates,
+            )
+            picks = [position.stock_id for position in settlements]
+            gross = float(
+                np.mean([position.gross_return for position in settlements])
+            )
             cost = period_cost(
                 picks, trade_day, raw_opens, opens, historical_large
             )
@@ -320,9 +336,12 @@ def run(db_path: Path, end: date) -> dict:
             )
             record(shuffled_periods, ordered_shuffled[:N_POSITIONS])
 
+        complete_tradeable = [
+            sid for sid in tradeable if np.isfinite(realized.loc[sid])
+        ]
         random_gross = random_gross_median(
             realized,
-            tradeable,
+            complete_tradeable,
             n_positions=N_POSITIONS,
             n_draws=RANDOM_DRAWS,
             seed=RANDOM_BENCHMARK_SEED + position,
@@ -334,9 +353,9 @@ def run(db_path: Path, end: date) -> dict:
                                "cost": median_cost,
                                "net": random_gross - median_cost})
         equal_periods.append({"decision_date": str(day.date()),
-                              "gross": float(realized[tradeable].mean()),
+                              "gross": float(realized[complete_tradeable].mean()),
                               "cost": 0.0,
-                              "net": float(realized[tradeable].mean())})
+                              "net": float(realized[complete_tradeable].mean())})
         print(f"  {day.date()} 完成", flush=True)
 
     model = summarise(model_periods, "LightGBM baseline")

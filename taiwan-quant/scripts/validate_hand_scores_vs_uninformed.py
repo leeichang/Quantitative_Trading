@@ -80,6 +80,7 @@ from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa:
 from taiwan_quant.data.integrity import (  # noqa: E402
     complete_holding_decision_dates,
     forward_returns,
+    select_holding_positions,
 )
 from taiwan_quant.data.loader import (  # noqa: E402
     HISTORY_DB_PATH,
@@ -92,6 +93,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 from taiwan_quant.validation.uninformed import (  # noqa: E402
     DEFAULT_DRAWS,
     NullDistribution,
@@ -197,6 +199,7 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
         ).reindex(calendar)
 
     opens, closes, raw_opens = frame("open"), frame("close"), frame(RAW_OPEN_COLUMN)
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
     # T+1 開盤進、T+HOLDING_DAYS 收盤出 = HOLDING_DAYS 天持有。
     # 第一版寫 shift(-1 - HOLDING_DAYS)，那是 H+1 天，與
     # diagnose_constraints / cost_floor / position_costs 以及
@@ -234,11 +237,11 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
         allowed = tuple(members_at.get(day) or ())
         if not allowed:
             continue
-        realized = forward.loc[day].dropna()
+        realized = forward.loc[day]
         entry_day = calendar[position + 1]
         tradeable = [
-            sid for sid in realized.index
-            if sid in allowed
+            sid for sid in allowed
+            if sid in raw_opens.columns
             and np.isfinite(raw_opens.loc[entry_day, sid])
             and raw_opens.loc[entry_day, sid] > 0
         ]
@@ -254,7 +257,23 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
 
         large_members = set(large_at.get(day, set()))
         used_dates.append(str(day.date()))
-        pool_nets.append(float(realized[list(today.index)].mean()))
+        complete_today = [sid for sid in today.index if np.isfinite(realized.loc[sid])]
+        pool_nets.append(float(realized[complete_today].mean()))
+
+        def settled_gross(
+            picks: list[str], current_day: pd.Timestamp = day
+        ) -> float:
+            settlements = select_holding_positions(
+                decision_date=current_day,
+                calendar=calendar,
+                ordered_candidates=picks,
+                opens=opens,
+                closes=closes,
+                holding_days=HOLDING_DAYS,
+                n_positions=len(picks),
+                delisted_dates=delisted_dates,
+            )
+            return float(np.mean([item.gross_return for item in settlements]))
 
         for name in families:
             series = all_scores[name]
@@ -267,7 +286,7 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
                 hand_nets[name].append(float("nan"))
                 half_capital_nets[name].append(float("nan"))
                 continue
-            gross = float(realized[picks].mean())
+            gross = settled_gross(picks)
             hand_nets[name].append(
                 gross - pick_cost(picks, entry_day, raw_opens, opens,
                                   large_members))
@@ -291,7 +310,7 @@ def run(db_path: Path, end: date, n_draws: int) -> dict:
                 if len(picks) < N_POSITIONS:
                     draw_nets[name][index].append(float("nan"))
                     continue
-                gross = float(realized[picks].mean())
+                gross = settled_gross(picks)
                 draw_nets[name][index].append(
                     gross - pick_cost(picks, entry_day, raw_opens, opens,
                                       large_members))

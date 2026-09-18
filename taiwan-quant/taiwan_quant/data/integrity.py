@@ -146,6 +146,35 @@ def complete_holding_decision_dates(
     ]
 
 
+def assert_plan_positions_tradeable(
+    *,
+    stock_ids: Iterable[str],
+    decision_date: pd.Timestamp,
+    bars_by_stock: Mapping[str, pd.DataFrame],
+) -> None:
+    """拒絕把資料已停滯或缺少真實價格的實際部位送進推播。
+
+    即時計畫尚未知道未來 T+H 價格；這裡能且必須守的是決策日資料新鮮度。
+    歷史結算仍由 :func:`select_holding_positions` 守 T+1 與 T+H。
+    """
+    required = ("raw_open", "raw_close")
+    for stock_id in stock_ids:
+        bars = bars_by_stock.get(stock_id)
+        missing = bars is None or decision_date not in bars.index
+        if not missing:
+            missing = any(
+                column not in bars.columns
+                or not math.isfinite(float(bars.at[decision_date, column]))
+                or float(bars.at[decision_date, column]) <= 0
+                for column in required
+            )
+        if missing:
+            raise DataIntegrityError(
+                f"實際計畫候選 {stock_id} 在決策日 {decision_date.date()} "
+                "缺少當日 raw_open/raw_close；拒絕推播"
+            )
+
+
 def select_holding_positions(
     *,
     decision_date: pd.Timestamp,
