@@ -246,7 +246,12 @@ def latest_price_date(db_path: Path) -> date:
     return date.fromisoformat(value)
 
 
-def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
+def generate(
+    db_path: Path,
+    as_of: date,
+    *,
+    enforce_price_anchor: bool = True,
+) -> list[ForwardPrediction]:
     """
     產生 `as_of` 當日的前推預測。
 
@@ -347,7 +352,11 @@ def generate(db_path: Path, as_of: date) -> list[ForwardPrediction]:
             # 決策日當天兩價通常相同（還原錨在載入範圍的最後一天），但
             # 那是巧合不是保證：換一個 end、或錨定日之後有除權息，就會
             # 分開。差太多時寧可停下來，不要靜默用錯的價格算成本分層。
-            if adjusted_close > 0 and abs(actual_close / adjusted_close - 1) > 0.01:
+            if (
+                enforce_price_anchor
+                and adjusted_close > 0
+                and abs(actual_close / adjusted_close - 1) > 0.01
+            ):
                 raise RuntimeError(
                     f"{sid} 在 {day.date()} 的實際價 {actual_close:.2f} 與還原價 "
                     f"{adjusted_close:.2f} 差 "
@@ -484,11 +493,17 @@ def audit_historical(db_path: Path, as_of: date) -> tuple[int, int]:
     """在開發集重播一個前推決策，驗證實際入選者的進出場價格。"""
     if as_of > DEV_END:
         raise ValueError(f"稽核重播不得超過開發集截止日 {DEV_END}")
-    predictions = generate(db_path, as_of)
+    # 歷史重播的還原價錨定在資料庫最新日，決策日兩價本來就會分開；
+    # 此模式只稽核持有期價格，不用這兩個價格做成本結論。
+    predictions = generate(db_path, as_of, enforce_price_anchor=False)
     calendar = load_trading_calendar(db_path)
     decision = date.fromisoformat(predictions[0].data_asof)
     position = calendar.index(decision)
     target = calendar[position + HOLDING_DAYS]
+    if target > DEV_END:
+        raise ValueError(
+            f"稽核持有期終點 {target} 超過開發集截止日 {DEV_END}"
+        )
     stock_ids = sorted({item.stock_id for item in predictions})
     prices = load_prices(
         stock_ids,

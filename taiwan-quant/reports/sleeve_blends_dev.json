@@ -1,0 +1,28 @@
+{
+  "source": "reports/hand_vs_uninformed_dev.json",
+  "end": "2023-12-29",
+  "holding_days": 40,
+  "capital_allocation": "每個 sleeve 50%；每檔 20,000 元；逐檔成本已扣除",
+  "pairs": {
+    "動能突破 + 均值回歸": {
+      "periods": 36,
+      "left_net_per_trip": 0.029840816974163773,
+      "right_net_per_trip": 0.0015972890543861592,
+      "blend_net_per_trip": 0.01571905301427496,
+      "left_net_sharpe": 0.48021834787941436,
+      "right_net_sharpe": 0.04373982092986622,
+      "blend_net_sharpe": 0.344388300960603,
+      "period_return_correlation": 0.6914959076318087
+    },
+    "籌碼跟隨 + 均值回歸": {
+      "periods": 36,
+      "left_net_per_trip": 0.010445296204238015,
+      "right_net_per_trip": 0.0015972890543861592,
+      "blend_net_per_trip": 0.006021292629312087,
+      "left_net_sharpe": 0.2757759901101322,
+      "right_net_sharpe": 0.04373982092986622,
+      "blend_net_sharpe": 0.1704542167256931,
+      "period_return_correlation": 0.803693092160998
+    }
+  }
+}
