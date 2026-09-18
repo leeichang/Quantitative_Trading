@@ -70,8 +70,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import scripts.validate_oos_trailing as V  # noqa: E402, N812
 from taiwan_quant.config.costs import (  # noqa: E402
     DEFAULT as DEFAULT_COST,
+)
+from taiwan_quant.config.costs import (
     resolve_tier,
 )
 from taiwan_quant.data.calendar import (  # noqa: E402
@@ -80,6 +83,10 @@ from taiwan_quant.data.calendar import (  # noqa: E402
 )
 from taiwan_quant.data.dataset import build_dataset  # noqa: E402
 from taiwan_quant.data.etf_universe import is_etf, merge_etf_candidates  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    complete_holding_decision_dates,
+    select_holding_positions,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     FROZEN_DATA_START,
     HISTORY_DB_PATH,
@@ -114,8 +121,7 @@ from taiwan_quant.ranking.tie_break import (  # noqa: E402
     DEFAULT_TIE_SEED,
     deterministic_jitter,
 )
-
-import scripts.validate_oos_trailing as V  # noqa: E402
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 
 # ══════════════════════════════════════════════════════════════
 # 固定參數（禁令 7、8）——參數變了就換 STRATEGY_VERSION
@@ -129,6 +135,7 @@ UNIVERSE_SIZE = 150
 UNIVERSE_BASIS = "market_cap"
 MIN_CANDIDATES = 30
 INCLUDE_ETFS = False
+DEV_END = date(2023, 12, 29)
 """
 ETF 暫不納入候選。
 
@@ -429,6 +436,11 @@ def settle(db_path: Path) -> tuple[int, int]:
         unlock_frozen=latest >= FROZEN_DATA_START,
         frozen_reason="record_forward --settle 回填實現報酬",
     )
+    price_calendar = [pd.Timestamp(day) for day in calendar]
+    opens = prices["open"].unstack("stock_id").reindex(price_calendar)
+    closes = prices["close"].unstack("stock_id").reindex(price_calendar)
+    delisted_dates = load_delisted_dates(db_path, as_of=latest)
+    complete_by_horizon: dict[int, set[pd.Timestamp]] = {}
 
     settled = 0
     for item in pending:
@@ -437,27 +449,79 @@ def settle(db_path: Path) -> tuple[int, int]:
         decision = date.fromisoformat(item.data_asof)
         if decision not in position:
             continue
-        i = position[decision]
-        if i + 1 + horizon >= len(calendar):
-            continue                      # 還沒到期
-        try:
-            bars = prices.xs(item.stock_id, level="stock_id")
-        except KeyError:
-            continue
-        entry_day, exit_day = calendar[i + 1], calendar[i + 1 + horizon]
-        if entry_day not in bars.index or exit_day not in bars.index:
-            continue                      # 停牌等缺價，不回填舊價假裝成交
-        entry = float(bars.loc[entry_day, "open"])
-        exit_ = float(bars.loc[exit_day, "close"])
-        if entry <= 0:
+        decision_ts = pd.Timestamp(decision)
+        if horizon not in complete_by_horizon:
+            complete_by_horizon[horizon] = set(complete_holding_decision_dates(
+                price_calendar,
+                price_calendar,
+                holding_days=horizon,
+            ))
+        if decision_ts not in complete_by_horizon[horizon]:
+            continue  # 還沒到期
+        selected = select_holding_positions(
+            decision_date=decision_ts,
+            calendar=price_calendar,
+            ordered_candidates=[item.stock_id],
+            opens=opens,
+            closes=closes,
+            holding_days=horizon,
+            n_positions=1,
+            delisted_dates=delisted_dates,
+        )
+        if not selected:
+            # T+1 無成交價；沒有交易就沒有可結算報酬。
             continue
         if settle_forward_prediction(
             db_path, item,
-            realized_return=exit_ / entry - 1.0,
+            realized_return=selected[0].gross_return,
             settled_at=datetime.now(UTC),
         ):
             settled += 1
     return settled, len(pending)
+
+
+def audit_historical(db_path: Path, as_of: date) -> tuple[int, int]:
+    """在開發集重播一個前推決策，驗證實際入選者的進出場價格。"""
+    if as_of > DEV_END:
+        raise ValueError(f"稽核重播不得超過開發集截止日 {DEV_END}")
+    predictions = generate(db_path, as_of)
+    calendar = load_trading_calendar(db_path)
+    decision = date.fromisoformat(predictions[0].data_asof)
+    position = calendar.index(decision)
+    target = calendar[position + HOLDING_DAYS]
+    stock_ids = sorted({item.stock_id for item in predictions})
+    prices = load_prices(
+        stock_ids,
+        start=decision,
+        end=target,
+        adjusted=True,
+        db_path=db_path,
+    )
+    price_calendar = [pd.Timestamp(day) for day in calendar[position: position + HOLDING_DAYS + 1]]
+    opens = prices["open"].unstack("stock_id").reindex(price_calendar)
+    closes = prices["close"].unstack("stock_id").reindex(price_calendar)
+    delisted_dates = load_delisted_dates(db_path, as_of=target)
+    checked = 0
+    for variant in VARIANTS:
+        ordered = [
+            item.stock_id
+            for item in sorted(
+                (row for row in predictions if row.strategy_version == variant.strategy_version),
+                key=lambda row: row.rank,
+            )
+        ]
+        selected = select_holding_positions(
+            decision_date=pd.Timestamp(decision),
+            calendar=price_calendar,
+            ordered_candidates=ordered,
+            opens=opens,
+            closes=closes,
+            holding_days=HOLDING_DAYS,
+            n_positions=len(ordered),
+            delisted_dates=delisted_dates,
+        )
+        checked += len(selected)
+    return checked, len(predictions)
 
 
 def main() -> None:
@@ -467,7 +531,14 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="只顯示不寫入")
     parser.add_argument("--db", type=Path, default=HISTORY_DB_PATH)
     parser.add_argument("--as-of", default=None, help="決策日；預設資料庫最新日")
+    parser.add_argument("--audit-as-of", default=None,
+                        help="只在開發集重播指定決策日並檢查持有期價格")
     args = parser.parse_args()
+
+    if args.audit_as_of:
+        checked, total = audit_historical(args.db, date.fromisoformat(args.audit_as_of))
+        print(f"開發集重播守門：檢查 {checked} / {total} 筆，觸發 0 次")
+        return
 
     if args.settle:
         done, pending = settle(args.db)

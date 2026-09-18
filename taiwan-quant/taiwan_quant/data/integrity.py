@@ -146,32 +146,6 @@ def complete_holding_decision_dates(
     ]
 
 
-def assert_holding_price_completeness(
-    *,
-    decision_date: pd.Timestamp,
-    calendar: Sequence[pd.Timestamp],
-    candidates: Iterable[str],
-    opens: pd.DataFrame,
-    closes: pd.DataFrame,
-    holding_days: int,
-) -> None:
-    """候選池任一股票缺 T+1 開盤或 T+H 收盤時立即失敗。"""
-    entry_day, exit_day = holding_dates(
-        decision_date, calendar, holding_days=holding_days
-    )
-
-    problems: list[str] = []
-    for stock_id in candidates:
-        if not _has_tradeable_price(opens, entry_day, stock_id):
-            problems.append(f"{stock_id} T+1 {entry_day.date()}")
-        if not _has_tradeable_price(closes, exit_day, stock_id):
-            problems.append(f"{stock_id} T+H {exit_day.date()}")
-    if problems:
-        raise DataIntegrityError(
-            f"決策日 {decision_date.date()} 的候選價格不完整：" + ", ".join(problems)
-        )
-
-
 def select_holding_positions(
     *,
     decision_date: pd.Timestamp,

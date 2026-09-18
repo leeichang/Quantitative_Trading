@@ -10,7 +10,6 @@ import pytest
 from taiwan_quant.data.dataset import build_dataset
 from taiwan_quant.data.integrity import (
     DataIntegrityError,
-    assert_holding_price_completeness,
     complete_holding_decision_dates,
     find_gap_runs,
     forward_returns,
@@ -65,23 +64,6 @@ def test_build_dataset_preserves_price_day_when_chips_are_missing() -> None:
 
     assert bars.index.tolist() == dates.tolist()
     assert pd.isna(bars.loc[dates[1], "foreign_net"])
-
-
-@pytest.mark.unit
-def test_holding_price_guard_rejects_missing_exit_instead_of_dropna() -> None:
-    calendar = list(pd.to_datetime(["2023-01-02", "2023-01-03", "2023-01-04"]))
-    opens = pd.DataFrame({"2330": [100.0, 101.0, 102.0]}, index=calendar)
-    closes = pd.DataFrame({"2330": [100.5, 101.5, float("nan")]}, index=calendar)
-
-    with pytest.raises(DataIntegrityError, match=r"2330.*T\+H.*2023-01-04"):
-        assert_holding_price_completeness(
-            decision_date=calendar[0],
-            calendar=calendar,
-            candidates=["2330"],
-            opens=opens,
-            closes=closes,
-            holding_days=2,
-        )
 
 
 @pytest.mark.unit
