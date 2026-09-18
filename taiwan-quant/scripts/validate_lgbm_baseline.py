@@ -109,6 +109,25 @@ DEV_END = date(2023, 12, 29)
 
 RANDOM_DRAWS = 200
 """隨機選 N 檔的模擬次數（CLAUDE.md 必跑對照組）"""
+RANDOM_BENCHMARK_SEED = 20260917
+
+
+def random_gross_median(
+    realized: pd.Series,
+    tradeable: list[str],
+    *,
+    n_positions: int,
+    n_draws: int,
+    seed: int,
+) -> float:
+    """固定排序母體與 seed，回傳可跨 process 重現的隨機選股中位數。"""
+    population = np.asarray(sorted(tradeable), dtype=object)
+    rng = np.random.default_rng(seed)
+    draws = [
+        float(realized[list(rng.choice(population, n_positions, replace=False))].mean())
+        for _ in range(n_draws)
+    ]
+    return float(np.median(draws))
 
 
 def period_cost(
@@ -221,7 +240,6 @@ def run(db_path: Path, end: date) -> dict:
     large_at = V.resolve_members(
         decision_dates, db_path, LARGE_TIER_SIZE, UNIVERSE_BASIS)
 
-    rng = np.random.default_rng(DEFAULT_TIE_SEED)
     model_periods, hand_periods, random_periods, equal_periods = [], [], [], []
     shuffled_periods: list[dict] = []
     overlaps: list[int] = []
@@ -302,17 +320,19 @@ def run(db_path: Path, end: date) -> dict:
             )
             record(shuffled_periods, ordered_shuffled[:N_POSITIONS])
 
-        draws = [
-            float(realized[list(rng.choice(tradeable, N_POSITIONS,
-                                           replace=False))].mean())
-            for _ in range(RANDOM_DRAWS)
-        ]
+        random_gross = random_gross_median(
+            realized,
+            tradeable,
+            n_positions=N_POSITIONS,
+            n_draws=RANDOM_DRAWS,
+            seed=RANDOM_BENCHMARK_SEED + position,
+        )
         median_cost = period_cost(hand_picks, entry_day, raw_opens, opens,
                                   large_members)
         random_periods.append({"decision_date": str(day.date()),
-                               "gross": float(np.median(draws)),
+                               "gross": random_gross,
                                "cost": median_cost,
-                               "net": float(np.median(draws)) - median_cost})
+                               "net": random_gross - median_cost})
         equal_periods.append({"decision_date": str(day.date()),
                               "gross": float(realized[tradeable].mean()),
                               "cost": 0.0,
@@ -337,7 +357,13 @@ def run(db_path: Path, end: date) -> dict:
 
     return {
         "end": str(end), "decision_dates": len(decision_dates),
-        "params": {**DEFAULT_PARAMS, "num_boost_round": NUM_BOOST_ROUND},
+        "params": {
+            **DEFAULT_PARAMS,
+            "num_boost_round": NUM_BOOST_ROUND,
+            "random_benchmark_seed": RANDOM_BENCHMARK_SEED,
+            "random_benchmark_draws": RANDOM_DRAWS,
+            "random_benchmark_population_order": "stock_id ascending",
+        },
         "n_trials": N_TRIALS,
         "model": model, "hand": hand,
         "shuffled_labels": shuffled_summary,
