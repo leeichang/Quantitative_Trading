@@ -13,6 +13,7 @@ from taiwan_quant.data.integrity import (
     assert_holding_price_completeness,
     complete_holding_decision_dates,
     find_gap_runs,
+    forward_returns,
     holding_dates,
     select_holding_positions,
 )
@@ -118,6 +119,30 @@ def test_holding_dates_and_tail_filter_share_t_plus_h_boundary() -> None:
     assert entry == calendar[2]
     assert target == calendar[4]
     assert kept == [calendar[0], calendar[1], calendar[2]]
+
+
+@pytest.mark.unit
+def test_forward_returns_uses_t_plus_1_open_and_t_plus_h_close() -> None:
+    calendar = list(pd.date_range("2023-01-02", periods=5, freq="B"))
+    opens = pd.DataFrame({"A": [10.0, 11.0, 12.0, 13.0, 14.0]}, index=calendar)
+    closes = pd.DataFrame({"A": [10.5, 12.0, 15.0, 17.0, 19.0]}, index=calendar)
+
+    result = forward_returns(opens, closes, holding_days=2)
+    _, exit_day = holding_dates(calendar[0], calendar, holding_days=2)
+
+    assert exit_day == calendar[2]
+    assert result.at[calendar[0], "A"] == pytest.approx(15.0 / 11.0 - 1.0)
+    assert result.at[calendar[1], "A"] == pytest.approx(17.0 / 12.0 - 1.0)
+    assert result.iloc[-2:].isna().all().all()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("holding_days", [0, -1])
+def test_forward_returns_rejects_non_positive_holding_days(holding_days: int) -> None:
+    frame = pd.DataFrame({"A": [10.0, 11.0]})
+
+    with pytest.raises(ValueError, match="holding_days"):
+        forward_returns(frame, frame, holding_days=holding_days)
 
 
 @pytest.mark.unit
