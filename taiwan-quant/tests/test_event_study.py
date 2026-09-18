@@ -18,8 +18,8 @@ import pandas as pd
 import pytest
 
 from taiwan_quant.validation.event_study import (
-    capacity_economics,
     EventStudyError,
+    capacity_economics,
     event_study,
     expanding_quantile_mask,
     forward_returns,

@@ -67,7 +67,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from taiwan_quant.data.integrity import forward_returns
+from taiwan_quant.data.integrity import forward_returns  # noqa: F401
 
 
 class EventStudyError(ValueError):
@@ -270,6 +270,53 @@ class CapacityResult:
         if self.n_offered == 0:
             return float("nan")
         return self.n_filled / self.n_offered
+
+
+@dataclass(frozen=True)
+class CapacityEconomics:
+    """容量受限成交在同日基準與逐檔成本下的逐期經濟結果。"""
+
+    gross_paired: tuple[float, ...]
+    net_paired: tuple[float, ...]
+    gross_excess: float
+    cost_per_trip: float
+    net_per_trip: float
+    net_standard_deviation: float
+
+
+def capacity_economics(
+    *,
+    returns: pd.DataFrame,
+    fills: pd.DataFrame,
+    universe_mask: pd.DataFrame,
+    cost_rates: pd.DataFrame,
+) -> CapacityEconomics:
+    """計算實際成交的同日毛超額、逐檔成本與逐日淨序列。"""
+    shapes = {returns.shape, fills.shape, universe_mask.shape, cost_rates.shape}
+    if len(shapes) != 1:
+        raise EventStudyError(
+            "報酬、成交、標的池與成本矩陣形狀必須完全一致"
+        )
+
+    event_daily = per_date_mean(returns, fills)
+    baseline_daily = per_date_mean(returns, universe_mask)
+    cost_daily = per_date_mean(cost_rates, fills)
+    valid = event_daily.notna() & baseline_daily.notna() & cost_daily.notna()
+    gross = (event_daily[valid] - baseline_daily[valid]).to_numpy(dtype=float)
+    costs = cost_daily[valid].to_numpy(dtype=float)
+    net = gross - costs
+    if not len(net):
+        raise EventStudyError("沒有同時具備成交、基準報酬與成本的日期")
+    return CapacityEconomics(
+        gross_paired=tuple(gross.tolist()),
+        net_paired=tuple(net.tolist()),
+        gross_excess=float(gross.mean()),
+        cost_per_trip=float(costs.mean()),
+        net_per_trip=float(net.mean()),
+        net_standard_deviation=(
+            float(net.std(ddof=1)) if len(net) > 1 else float("nan")
+        ),
+    )
 
 
 def capacity_constrained_fills(
