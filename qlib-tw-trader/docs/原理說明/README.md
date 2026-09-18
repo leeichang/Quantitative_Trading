@@ -45,11 +45,35 @@
 > 還原因子的缺漏處理有 bug——0050 因 2025 年的 1:4 分割算出 84.20% 的假回撤。
 > **修正後所有先前的回撤數字都要重看。** 標的池代理也從命中 72.7% 提升到 94.7%。
 
+## 2026-09-14
+
+| 文件 | 對應程式 | 核心問題 |
+|---|---|---|
+| [OOS 凍結與前推帳本原理](2026-09-14_OOS凍結與前推帳本原理.md) | `validation/walk_forward.py`、`forward_predictions.py`、`data/calendar.py`、`scripts/record_forward.py` | 為什麼 OOS 只能用一次，而前推帳本是唯一乾淨的證據來源？（禁令 6） |
+
+## 2026-09-15
+
+| 文件 | 對應程式 | 核心問題 |
+|---|---|---|
+| [CPCV 路徑分布與多重測試校正](2026-09-15_CPCV路徑分布與多重測試校正.md) | `validation/cpcv.py`、`fold_signals.py`、`validation/external/`、`scripts/diagnose_cpcv.py` | 單一回測曲線為什麼不夠？PBO 與 DSR 各回答什麼問題？ |
+| [平手排序偏差與 E3 的 CPCV 結果](2026-09-15_平手排序偏差與E3的CPCV結果.md) | `ranking/tie_break.py`、`scripts/diagnose_cpcv.py --scheme E3` | 分數相同時的排序方式，會不會自己造出優勢？ |
+| [外部專案評估：AutoHedge 與 Vibe-Trading](2026-09-15_外部專案評估_AutoHedge與VibeTrading.md) | — | 現成專案能不能直接用？缺的是哪一塊？ |
+
 ## 2026-09-16
 
 | 文件 | 對應程式 | 核心問題 |
 |---|---|---|
 | [下市股最後有價日結算與偏差量測](2026-09-16_下市股最後有價日結算與偏差量測.md) | `validation/delisting.py`、`scripts/diagnose_delistings.py` | 固定期末價缺值時，如何區分下市與停牌並避免靜默剔除？ |
+| [漲停預測力與成本結構](2026-09-16_漲停預測力與成本結構.md) | `scripts/diagnose_limit_up.py` | 「每週抓一檔漲停，40 週複利 45 倍」——訊號只在極端值有資訊，中段比隨機還差 |
+| [漲停事件驅動與原始漲停率的更正](2026-09-16_漲停事件驅動與原始漲停率的更正.md) | `labeling/limit_up.py`、`scripts/diagnose_limit_up_events.py` | 漲停價如何依台股跳動單位計算？原始漲停率先前算錯在哪？ |
+| [箱內排序能力與優勢集中度](2026-09-16_箱內排序能力與優勢集中度.md) | `scripts/diagnose_within_bin_ic.py` | 分數在同一個機率箱內還有排序能力嗎？ |
+| [最佳箱的逐年穩定度](2026-09-16_最佳箱的逐年穩定度.md) | `scripts/diagnose_bin_stability.py` | 「最好的那一箱」每年都是同一箱嗎？ |
+| [持有期 120 日的實測結果](2026-09-16_持有期120日的實測結果.md) | `scripts/diagnose_families.py` | 成本最低的持有期，報酬撐得住嗎？ |
+| [投組約束的代價與檢定力極限](2026-09-16_投組約束的代價與檢定力極限.md) | `ranking/portfolio_features.py`、`ranking/constraints.py`、`scripts/diagnose_constraints.py` | 產業／ATR／相關性約束要付多少代價？**這個檢定只能偵測「約束把整個優勢消滅」** |
+| [成本分層必須使用實際價格](2026-09-16_成本分層必須使用實際價格.md) | `config/costs.py` | 還原價錨定在最新日，用它分層會分錯級距 |
+| [成本地板與可負擔性用錯價格](2026-09-16_成本地板與可負擔性用錯價格.md) | `data/loader.py`、`scripts/diagnose_cost_floor.py` | 40 萬資金的成本地板在哪？可負擔性為什麼必須用 `raw_*`？ |
+| [ETF 納入標的池與逐檔成本更正](2026-09-16_ETF納入與逐檔成本更正.md) | `data/etf_universe.py`、`config/costs.py`、`scripts/validate_oos_momentum.py` | 策略選不到 0050，把 ETF 放進池裡會怎樣？逐檔成本改了哪些數字？ |
+| [前推帳本改記動能突破 N=10](2026-09-16_前推帳本改記動能突破.md) | `forward_predictions.py`、`scripts/record_forward.py` | 為什麼帳本要記證據最完整的那一組，而這不是背書？ |
 
 ## 2026-09-17
 
@@ -58,6 +82,30 @@
 | [交易日缺口驗證與守門](2026-09-17_交易日缺口驗證與守門.md) | `data/integrity.py`、`scripts/diagnose_data_integrity.py` | 無價日是資料漏列還是實際停牌？回測如何避免靜默縮小候選池？ |
 | [單一價格框架](2026-09-17_單一價格框架.md) | `data/loader.py` | 還原價與實際成交價如何共用同一索引並避免雙次載入漂移？ |
 | [守門範圍與下市豁免](2026-09-17_守門範圍與下市豁免.md) | `data/integrity.py`、`validation/delisting.py` | 為什麼只守實際成交的前 N 檔，且下市與暫停必須分流？ |
+| [新聞在落地當天就被定價，與 ETF 的成本區間](2026-09-17_新聞已被定價與ETF成本區間.md) | — | 「新聞的影響比任何因素都大，能收集新聞嗎？」 |
+| [ETF 輪動的否定](2026-09-17_ETF輪動的否定.md) | `ranking/etf_rotation.py`、`scripts/validate_etf_rotation.py` | 流動性、PBO、與「選參數」本身沒有資訊 |
+| [本金要多少才夠？](2026-09-17_本金與成本地板.md) | `scripts/diagnose_cost_floor.py` | 「40 萬難以打敗買進持有，那最少要多少本金？」——**本金不是瓶頸** |
+| [LightGBM baseline 與對照組的錯誤](2026-09-17_LightGBM_baseline與對照組的錯誤.md) | `models/lgbm_baseline.py`、`scripts/validate_lgbm_baseline.py` | ⚠️ 本文的主要結論已被 2026-09-18 的持有期修正推翻，數字以 09-18 兩篇為準 |
+| [用新門檻重算手工分數](2026-09-17_手工分數對無資訊對照組的重算.md) | `validation/uninformed.py`、`scripts/validate_hand_scores_vs_uninformed.py` | ⚠️ 數字已被 2026-09-18 的持有期修正更正（方向與順序不變） |
+
+## 2026-09-18
+
+| 文件 | 對應程式 | 核心問題 |
+|---|---|---|
+| [持有期多算一天，推翻了我自己關於對照組的結論](2026-09-18_持有期多算一天推翻了對照組的結論.md) | `models/lgbm_baseline.py`、`scripts/validate_lgbm_baseline.py`、`scripts/validate_hand_scores_vs_uninformed.py` | `shift(-1-H)` 多持有一天。**「對照組太弱」與「73% 是因子傾斜」都不成立** |
+| [持有期慣例的清查](2026-09-18_持有期慣例的清查.md) | `data/integrity.py`、六支算 forward 的腳本 | 一個宣稱有單一來源的註解，和一個生產碼零呼叫者的守門 |
+| [「超過隨機 95% 分位」這句話該退休](2026-09-18_超過隨機95分位這句話該退休.md) | `validation/uninformed.py`、`taiwan-quant/CLAUDE.md` | 換成嚴格虛無後，兩種搬法給出相反判定——**結論不能重算，只能撤回** |
+
+---
+
+> 09-18 三篇是同一件事的三個層次：**bug、範圍、以及引用。**
+>
+> 持有期多算一天（bug）能活 28 天，因為 forward 報酬有六份實作（範圍）；
+> 而一個被取代的門檻能繼續當證據用兩天，因為它散落在 11 處引用裡
+> （引用）。**三者都是「沒有單一來源」的不同表現。**
+>
+> ⚠️ 09-17 的 LightGBM 與手工分數兩篇，數字已被 09-18 更正。
+> 兩篇都保留原文並加註（禁令 9），但**引用時以 09-18 為準**。
 
 ---
 
