@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from scripts.validate_lgbm_baseline import random_gross_median
 from taiwan_quant.models.lgbm_baseline import (
     DEFAULT_PARAMS,
     N_TRIALS,
@@ -290,6 +291,22 @@ def test_baseline_declares_one_trial() -> None:
     assert N_TRIALS == 1
     assert DEFAULT_PARAMS["seed"] == 20260917, "種子固定才可重現（禁令 7）"
     assert DEFAULT_PARAMS["deterministic"] is True
+
+
+@pytest.mark.unit
+def test_random_benchmark_is_invariant_to_candidate_input_order() -> None:
+    realized = pd.Series({"A": 0.10, "B": -0.20, "C": 0.30, "D": 0.00})
+
+    forward = random_gross_median(
+        realized, ["A", "B", "C", "D"],
+        n_positions=2, n_draws=20, seed=20260919,
+    )
+    reversed_order = random_gross_median(
+        realized, ["D", "C", "B", "A"],
+        n_positions=2, n_draws=20, seed=20260919,
+    )
+
+    assert forward == pytest.approx(reversed_order)
 
 
 @pytest.mark.unit
