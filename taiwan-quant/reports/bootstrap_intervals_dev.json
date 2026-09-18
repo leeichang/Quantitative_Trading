@@ -1,0 +1,489 @@
+{
+  "source": "reports/lgbm_baseline_dev.json",
+  "periods": 36,
+  "seed": 20260918,
+  "n_draws": 4000,
+  "block_sweep": [
+    1,
+    2,
+    4
+  ],
+  "per_trip": {
+    "model": {
+      "label": "LightGBM baseline",
+      "periods": 36,
+      "lag1_autocorrelation": -0.1597094801125306,
+      "excess_kurtosis": 4.706722021233158,
+      "normal_interval": {
+        "point": 0.03694747282125578,
+        "lower": -0.0016542774369660979,
+        "upper": 0.07554922307947766,
+        "standard_error": 0.01969477053990912
+      },
+      "bootstrap_interval": {
+        "point": 0.03694747282125578,
+        "lower": 0.0002539152779997032,
+        "upper": 0.07786376087789389,
+        "width": 0.07760984559989419,
+        "excludes_zero": true,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    },
+    "hand": {
+      "label": "手工分數（動能突破）",
+      "periods": 36,
+      "lag1_autocorrelation": -0.06743113845413651,
+      "excess_kurtosis": 1.914469523798032,
+      "normal_interval": {
+        "point": 0.030863039196385993,
+        "lower": -0.02010628422117198,
+        "upper": 0.08183236261394397,
+        "standard_error": 0.026004756845692843
+      },
+      "bootstrap_interval": {
+        "point": 0.030863039196385993,
+        "lower": -0.01929318364623996,
+        "upper": 0.08143767624865994,
+        "width": 0.1007308598948999,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    },
+    "shuffled_labels": {
+      "label": "標籤打亂（洩漏偵測）",
+      "periods": 36,
+      "lag1_autocorrelation": -0.27776695286287356,
+      "excess_kurtosis": 3.3544173944357505,
+      "normal_interval": {
+        "point": 0.005586475092386158,
+        "lower": -0.023886427453035354,
+        "upper": 0.03505937763780767,
+        "standard_error": 0.015037195176235465
+      },
+      "bootstrap_interval": {
+        "point": 0.005586475092386158,
+        "lower": -0.025805322398097606,
+        "upper": 0.03410068599239641,
+        "width": 0.05990600839049401,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    },
+    "random_median": {
+      "label": "隨機 10 檔（200 次中位）",
+      "periods": 36,
+      "lag1_autocorrelation": -0.2773603390573356,
+      "excess_kurtosis": 4.261948398826841,
+      "normal_interval": {
+        "point": 0.005678043484401324,
+        "lower": -0.0235422764852552,
+        "upper": 0.03489836345405785,
+        "standard_error": 0.014908326515130882
+      },
+      "bootstrap_interval": {
+        "point": 0.005678043484401324,
+        "lower": -0.02422313156983566,
+        "upper": 0.035073475093110706,
+        "width": 0.059296606662946366,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    },
+    "equal_weight": {
+      "label": "等權全池（無成本）",
+      "periods": 36,
+      "lag1_autocorrelation": -0.2810016155313456,
+      "excess_kurtosis": 4.278411918874662,
+      "normal_interval": {
+        "point": 0.01992812617450411,
+        "lower": -0.009284002169124925,
+        "upper": 0.04914025451813314,
+        "standard_error": 0.014904147114096447
+      },
+      "bootstrap_interval": {
+        "point": 0.01992812617450411,
+        "lower": -0.010230755083892143,
+        "upper": 0.04975358040370969,
+        "width": 0.059984335487601834,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    }
+  },
+  "total_return": {
+    "model": {
+      "label": "LightGBM baseline",
+      "point": 1.9661674493519357,
+      "by_block_length": {
+        "1": {
+          "point": 1.9661674493519357,
+          "lower": -0.1654645300784782,
+          "upper": 10.112676243267822,
+          "width": 10.278140773346301,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 1.9661674493519357,
+          "lower": -0.07954680056458883,
+          "upper": 8.735980695913616,
+          "width": 8.815527496478206,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 1.9661674493519357,
+          "lower": 0.012194268561509574,
+          "upper": 7.558096395137603,
+          "width": 7.545902126576093,
+          "excludes_zero": true,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    },
+    "hand": {
+      "label": "手工分數（動能突破）",
+      "point": 0.9974038391004525,
+      "by_block_length": {
+        "1": {
+          "point": 0.9974038391004525,
+          "lower": -0.6812740044216017,
+          "upper": 10.273123771574625,
+          "width": 10.954397775996226,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 0.9974038391004525,
+          "lower": -0.673221579913317,
+          "upper": 9.698522441114267,
+          "width": 10.371744021027585,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 0.9974038391004525,
+          "lower": -0.6534892337892496,
+          "upper": 9.58339533154716,
+          "width": 10.23688456533641,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    },
+    "shuffled_labels": {
+      "label": "標籤打亂（洩漏偵測）",
+      "point": 0.04762891146412729,
+      "by_block_length": {
+        "1": {
+          "point": 0.04762891146412729,
+          "lower": -0.6885812545788657,
+          "upper": 2.05844929210901,
+          "width": 2.7470305466878755,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 0.04762891146412729,
+          "lower": -0.6139027161905545,
+          "upper": 1.5775203323658151,
+          "width": 2.1914230485563695,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 0.04762891146412729,
+          "lower": -0.5808915822388243,
+          "upper": 1.5657148859332173,
+          "width": 2.146606468172042,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    },
+    "random_median": {
+      "label": "隨機 10 檔（200 次中位）",
+      "point": 0.057356361425989766,
+      "by_block_length": {
+        "1": {
+          "point": 0.057356361425989766,
+          "lower": -0.6703252436714756,
+          "upper": 2.060989461764793,
+          "width": 2.7313147054362683,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 0.057356361425989766,
+          "lower": -0.5886921957168215,
+          "upper": 1.6901682936465452,
+          "width": 2.2788604893633666,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 0.057356361425989766,
+          "lower": -0.5433574100014756,
+          "upper": 1.3868091099315203,
+          "width": 1.930166519932996,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    },
+    "equal_weight": {
+      "label": "等權全池（無成本）",
+      "point": 0.762076177470957,
+      "by_block_length": {
+        "1": {
+          "point": 0.762076177470957,
+          "lower": -0.4445893116072848,
+          "upper": 4.010127093643452,
+          "width": 4.454716405250736,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 0.762076177470957,
+          "lower": -0.3086401174242905,
+          "upper": 3.430599302016115,
+          "width": 3.7392394194404055,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 0.762076177470957,
+          "lower": -0.2329337209389709,
+          "upper": 2.9630180768413887,
+          "width": 3.1959517977803595,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    }
+  },
+  "paired": {
+    "model − random_median": {
+      "labels": "LightGBM baseline − 隨機 10 檔（200 次中位）",
+      "mean_difference": 0.031269429336854455,
+      "t": 3.222840520914733,
+      "t_verdict": "顯著",
+      "lag1_autocorrelation": -0.09041607785859121,
+      "excess_kurtosis": 1.0152618656876662,
+      "bootstrap_interval": {
+        "point": 0.031269429336854455,
+        "lower": 0.012913352259632716,
+        "upper": 0.05146890269690295,
+        "width": 0.038555550437270235,
+        "excludes_zero": true,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      },
+      "agrees_with_t": true
+    },
+    "shuffled_labels − random_median": {
+      "labels": "標籤打亂（洩漏偵測） − 隨機 10 檔（200 次中位）",
+      "mean_difference": -9.156839201516706e-05,
+      "t": -0.01793795850631158,
+      "t_verdict": "量不出差別",
+      "lag1_autocorrelation": -0.07749425085555155,
+      "excess_kurtosis": -1.0820976350363276,
+      "bootstrap_interval": {
+        "point": -9.156839201516706e-05,
+        "lower": -0.009956451566265862,
+        "upper": 0.010044179249304695,
+        "width": 0.020000630815570557,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      },
+      "agrees_with_t": true
+    },
+    "model − shuffled_labels": {
+      "labels": "LightGBM baseline − 標籤打亂（洩漏偵測）",
+      "mean_difference": 0.03136099772886962,
+      "t": 2.816661991798032,
+      "t_verdict": "顯著",
+      "lag1_autocorrelation": -0.023094651551478006,
+      "excess_kurtosis": 2.805395723434856,
+      "bootstrap_interval": {
+        "point": 0.03136099772886962,
+        "lower": 0.010197022771356002,
+        "upper": 0.05460906472911604,
+        "width": 0.04441204195776004,
+        "excludes_zero": true,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      },
+      "agrees_with_t": true
+    },
+    "model − hand": {
+      "labels": "LightGBM baseline − 手工分數（動能突破）",
+      "mean_difference": 0.006084433624869788,
+      "t": 0.2956451649107543,
+      "t_verdict": "量不出差別",
+      "lag1_autocorrelation": 0.08049287325586241,
+      "excess_kurtosis": 1.8468926579485299,
+      "bootstrap_interval": {
+        "point": 0.006084433624869788,
+        "lower": -0.033611435399094496,
+        "upper": 0.046934076489677,
+        "width": 0.08054551188877149,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      },
+      "agrees_with_t": true
+    },
+    "hand − shuffled_labels": {
+      "labels": "手工分數（動能突破） − 標籤打亂（洩漏偵測）",
+      "mean_difference": 0.025276564103999824,
+      "t": 1.376652452546342,
+      "t_verdict": "量不出差別",
+      "lag1_autocorrelation": -0.07413967101623928,
+      "excess_kurtosis": 1.918954125202597,
+      "bootstrap_interval": {
+        "point": 0.025276564103999824,
+        "lower": -0.007563436098193101,
+        "upper": 0.06166492705532653,
+        "width": 0.06922836315351963,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      },
+      "agrees_with_t": true
+    }
+  },
+  "acceptance": {
+    "benchmarks": {
+      "等權全池（無成本）": 0.762076177470957
+    },
+    "arms": {
+      "model": {
+        "label": "LightGBM baseline",
+        "point": 1.9661674493519357,
+        "lower_below_benchmark_by_block": {
+          "等權全池（無成本）": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "等權全池（無成本）"
+        ],
+        "verdict": "無法與任一基準區分"
+      },
+      "hand": {
+        "label": "手工分數（動能突破）",
+        "point": 0.9974038391004525,
+        "lower_below_benchmark_by_block": {
+          "等權全池（無成本）": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "等權全池（無成本）"
+        ],
+        "verdict": "無法與任一基準區分"
+      },
+      "shuffled_labels": {
+        "label": "標籤打亂（洩漏偵測）",
+        "point": 0.04762891146412729,
+        "lower_below_benchmark_by_block": {
+          "等權全池（無成本）": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "等權全池（無成本）"
+        ],
+        "verdict": "無法與任一基準區分"
+      },
+      "random_median": {
+        "label": "隨機 10 檔（200 次中位）",
+        "point": 0.057356361425989766,
+        "lower_below_benchmark_by_block": {
+          "等權全池（無成本）": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "等權全池（無成本）"
+        ],
+        "verdict": "無法與任一基準區分"
+      },
+      "equal_weight": {
+        "label": "等權全池（無成本）",
+        "point": 0.762076177470957,
+        "lower_below_benchmark_by_block": {
+          "等權全池（無成本）": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "等權全池（無成本）"
+        ],
+        "verdict": "無法與任一基準區分"
+      }
+    }
+  }
+}

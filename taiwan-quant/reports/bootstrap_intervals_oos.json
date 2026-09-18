@@ -1,0 +1,139 @@
+{
+  "source": "reports/oos_momentum_top10_h40_percost.json",
+  "periods": 16,
+  "seed": 20260918,
+  "n_draws": 4000,
+  "block_sweep": [
+    1,
+    2,
+    4
+  ],
+  "per_trip": {
+    "strategy": {
+      "label": "momentum_top10_h40@oos-2026-09-16",
+      "periods": 16,
+      "lag1_autocorrelation": 0.2483592767519132,
+      "excess_kurtosis": -0.3519798349061287,
+      "normal_interval": {
+        "point": 0.065816728569044,
+        "lower": -0.009491584630788905,
+        "upper": 0.1411250417688769,
+        "standard_error": 0.03842260877542495
+      },
+      "bootstrap_interval": {
+        "point": 0.065816728569044,
+        "lower": -0.003220422260530005,
+        "upper": 0.13927709723337667,
+        "width": 0.14249751949390668,
+        "excludes_zero": false,
+        "level": 0.95,
+        "block_length": 1,
+        "n_draws": 4000
+      }
+    }
+  },
+  "total_return": {
+    "strategy": {
+      "label": "momentum_top10_h40@oos-2026-09-16",
+      "point": 1.388252336194228,
+      "by_block_length": {
+        "1": {
+          "point": 1.388252336194228,
+          "lower": -0.13340218878491422,
+          "upper": 5.872252335751457,
+          "width": 6.0056545245363715,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 1,
+          "n_draws": 4000
+        },
+        "2": {
+          "point": 1.388252336194228,
+          "lower": -0.2377396824035746,
+          "upper": 7.491395659014318,
+          "width": 7.7291353414178925,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 2,
+          "n_draws": 4000
+        },
+        "4": {
+          "point": 1.388252336194228,
+          "lower": -0.16188088824745236,
+          "upper": 6.626536272404028,
+          "width": 6.7884171606514805,
+          "excludes_zero": false,
+          "level": 0.95,
+          "block_length": 4,
+          "n_draws": 4000
+        }
+      },
+      "skipped_block_lengths": []
+    }
+  },
+  "paired": {},
+  "acceptance": {
+    "benchmarks": {
+      "0050": 2.4215346134047575,
+      "0051": 1.1022383857437563,
+      "0056": 0.9667189438526997,
+      "equal_weight_universe": 0.6144783516037304,
+      "random_median": 0.5882394252891306,
+      "random_p05": 0.15098513337109512,
+      "random_p95": 1.209677646811007
+    },
+    "arms": {
+      "strategy": {
+        "label": "momentum_top10_h40@oos-2026-09-16",
+        "point": 1.388252336194228,
+        "lower_below_benchmark_by_block": {
+          "0050": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "0051": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "0056": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "equal_weight_universe": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "random_median": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "random_p05": {
+            "1": true,
+            "2": true,
+            "4": true
+          },
+          "random_p95": {
+            "1": true,
+            "2": true,
+            "4": true
+          }
+        },
+        "benchmarks_inside_interval": [
+          "0050",
+          "0051",
+          "0056",
+          "equal_weight_universe",
+          "random_median",
+          "random_p05",
+          "random_p95"
+        ],
+        "verdict": "無法與任一基準區分"
+      }
+    }
+  }
+}

@@ -95,6 +95,7 @@
 | [持有期多算一天，推翻了我自己關於對照組的結論](2026-09-18_持有期多算一天推翻了對照組的結論.md) | `models/lgbm_baseline.py`、`scripts/validate_lgbm_baseline.py`、`scripts/validate_hand_scores_vs_uninformed.py` | `shift(-1-H)` 多持有一天。**「對照組太弱」與「73% 是因子傾斜」都不成立** |
 | [持有期慣例的清查](2026-09-18_持有期慣例的清查.md) | `data/integrity.py`、六支算 forward 的腳本 | 一個宣稱有單一來源的註解，和一個生產碼零呼叫者的守門 |
 | [「超過隨機 95% 分位」這句話該退休](2026-09-18_超過隨機95分位這句話該退休.md) | `validation/uninformed.py`、`taiwan-quant/CLAUDE.md` | 換成嚴格虛無後，兩種搬法給出相反判定——**結論不能重算，只能撤回** |
+| [信賴區間讓累積報酬失去意義](2026-09-18_信賴區間讓累積報酬失去意義.md) | `validation/bootstrap.py`、`scripts/diagnose_bootstrap_intervals.py` | 樣本外 +138.83% 的 95% 區間是 [−13.3%, +587.2%]，**七個基準全落在裡面** |
 
 ---
 
