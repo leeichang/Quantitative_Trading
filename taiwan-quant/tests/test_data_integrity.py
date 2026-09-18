@@ -10,6 +10,7 @@ import pytest
 from taiwan_quant.data.dataset import build_dataset
 from taiwan_quant.data.integrity import (
     DataIntegrityError,
+    assert_plan_positions_tradeable,
     complete_holding_decision_dates,
     find_gap_runs,
     forward_returns,
@@ -202,6 +203,23 @@ def test_selection_guard_rejects_suspended_position_in_top_n() -> None:
             holding_days=3,
             n_positions=1,
             delisted_dates={"A": None},
+        )
+
+
+@pytest.mark.unit
+def test_plan_guard_rejects_historical_suspension_with_stale_last_bar() -> None:
+    """2915 在 2018-08-23 的歷史停牌型態：候選資料停在前一交易日。"""
+    as_of = pd.Timestamp("2018-08-23")
+    stale = pd.DataFrame(
+        {"raw_open": [50.0], "raw_close": [51.0]},
+        index=pd.to_datetime(["2018-08-22"]),
+    )
+
+    with pytest.raises(DataIntegrityError, match="2915.*2018-08-23"):
+        assert_plan_positions_tradeable(
+            stock_ids=["2915"],
+            decision_date=as_of,
+            bars_by_stock={"2915": stale},
         )
 
 
