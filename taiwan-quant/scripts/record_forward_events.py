@@ -264,6 +264,26 @@ def main() -> int:
     )
 
     day = pd.Timestamp(as_of)
+
+    # 融資餘額由交易所在當日收盤後公布。若公布或取得延遲，T+1 開盤進場
+    # 的前提就不成立——而 margin 全為 NaN 時 diff 也是 NaN，事件數會是
+    # 零，看起來像「今天沒訊號」而不是「資料還沒到」。**兩者必須分開。**
+    if day not in margin.index:
+        raise RecordError(f"{as_of} 不在價格索引內，無法記錄")
+    available = int(margin.loc[day].notna().sum())
+    if available == 0:
+        raise RecordError(
+            f"{as_of} 的融資餘額資料一檔都沒有——這是資料未到，"
+            "不是當日無訊號。請先補資料再記錄，不可留空。"
+        )
+    coverage = available / margin.shape[1]
+    if coverage < 0.5:
+        raise RecordError(
+            f"{as_of} 的融資餘額只涵蓋 {coverage:.1%}（{available}"
+            f"/{margin.shape[1]} 檔）——涵蓋率過低會讓分位門檻失真"
+        )
+    print(f"融資餘額涵蓋 {available}/{margin.shape[1]} 檔（{coverage:.1%}）")
+
     universe = set(
         load_universe_at(as_of, db_path=db_path, limit=UNIVERSE_SIZE,
                          basis=DEFAULT_UNIVERSE_BASIS).stock_ids
