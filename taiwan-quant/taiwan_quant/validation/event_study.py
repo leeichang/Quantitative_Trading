@@ -297,10 +297,25 @@ def capacity_economics(
         raise EventStudyError(
             "報酬、成交、標的池與成本矩陣形狀必須完全一致"
         )
+    actual_fills = fills.astype(bool)
+    missing_returns = actual_fills & returns.isna()
+    if bool(missing_returns.to_numpy().any()):
+        row, column = np.argwhere(missing_returns.to_numpy())[0]
+        raise EventStudyError(
+            "實際成交部位缺少報酬；不可在逐日平均時靜默排除："
+            f"{missing_returns.columns[column]} @ {missing_returns.index[row].date()}"
+        )
+    missing_costs = actual_fills & cost_rates.isna()
+    if bool(missing_costs.to_numpy().any()):
+        row, column = np.argwhere(missing_costs.to_numpy())[0]
+        raise EventStudyError(
+            "實際成交部位缺少成本；不可在逐日平均時靜默排除："
+            f"{missing_costs.columns[column]} @ {missing_costs.index[row].date()}"
+        )
 
-    event_daily = per_date_mean(returns, fills)
+    event_daily = per_date_mean(returns, actual_fills)
     baseline_daily = per_date_mean(returns, universe_mask)
-    cost_daily = per_date_mean(cost_rates, fills)
+    cost_daily = per_date_mean(cost_rates, actual_fills)
     valid = event_daily.notna() & baseline_daily.notna() & cost_daily.notna()
     gross = (event_daily[valid] - baseline_daily[valid]).to_numpy(dtype=float)
     costs = cost_daily[valid].to_numpy(dtype=float)

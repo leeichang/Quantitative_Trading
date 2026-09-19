@@ -31,7 +31,11 @@ from taiwan_quant.config.costs import (  # noqa: E402
     resolve_tier,
 )
 from taiwan_quant.data.etf_universe import is_etf  # noqa: E402
-from taiwan_quant.data.integrity import DataIntegrityError, forward_returns  # noqa: E402
+from taiwan_quant.data.integrity import (  # noqa: E402
+    DataIntegrityError,
+    forward_returns,
+    select_holding_positions,
+)
 from taiwan_quant.data.loader import (  # noqa: E402
     DEFAULT_UNIVERSE_BASIS,
     HISTORY_DB_PATH,
@@ -40,6 +44,7 @@ from taiwan_quant.data.loader import (  # noqa: E402
     load_prices,
 )
 from taiwan_quant.validation.bootstrap import block_bootstrap  # noqa: E402
+from taiwan_quant.validation.delisting import load_delisted_dates  # noqa: E402
 from taiwan_quant.validation.event_study import (  # noqa: E402
     capacity_constrained_fills,
     capacity_economics,
@@ -100,6 +105,40 @@ def _cost_rates(
     return rates
 
 
+def _settle_missing_fill_returns(
+    *,
+    returns: pd.DataFrame,
+    fills: pd.DataFrame,
+    opens: pd.DataFrame,
+    closes: pd.DataFrame,
+    holding_days: int,
+    delisted_dates: dict[str, date | None],
+) -> pd.DataFrame:
+    """用共用下市政策補可證明的下市部位；暫停交易仍 fail closed。"""
+    settled_returns = returns.copy()
+    missing = fills.astype(bool) & settled_returns.isna()
+    calendar = list(returns.index)
+    for row, column in np.argwhere(missing.to_numpy()):
+        decision = pd.Timestamp(missing.index[row])
+        stock_id = str(missing.columns[column])
+        positions = select_holding_positions(
+            decision_date=decision,
+            calendar=calendar,
+            ordered_candidates=[stock_id],
+            opens=opens,
+            closes=closes,
+            holding_days=holding_days,
+            n_positions=1,
+            delisted_dates=delisted_dates,
+        )
+        if not positions:
+            raise DataIntegrityError(
+                f"實際成交 {stock_id} @ {decision.date()} 缺少 T+1 進場價"
+            )
+        settled_returns.at[decision, stock_id] = positions[0].gross_return
+    return settled_returns
+
+
 def _evaluate(
     *,
     label: str,
@@ -108,17 +147,29 @@ def _evaluate(
     universe: pd.DataFrame,
     large_mask: pd.DataFrame,
     adjusted_opens: pd.DataFrame,
+    closes: pd.DataFrame,
     raw_opens: pd.DataFrame,
     returns: pd.DataFrame,
+    delisted_dates: dict[str, date | None],
     n_slots: int,
     holding_days: int,
 ) -> dict[str, object]:
-    eligible = event_mask.astype(bool) & universe.astype(bool) & returns.notna()
+    eligible = event_mask.astype(bool) & universe.astype(bool)
+    complete = np.arange(len(eligible.index)) + holding_days < len(eligible.index)
+    eligible.loc[~complete, :] = False
     capacity = capacity_constrained_fills(
         eligible,
         scores,
         n_slots=n_slots,
         holding_days=holding_days,
+    )
+    settled_returns = _settle_missing_fill_returns(
+        returns=returns,
+        fills=capacity.fills,
+        opens=adjusted_opens,
+        closes=closes,
+        holding_days=holding_days,
+        delisted_dates=delisted_dates,
     )
     amount = CAPITAL / n_slots
     economics: dict[str, object] = {}
@@ -136,7 +187,7 @@ def _evaluate(
             model=model,
         )
         result = capacity_economics(
-            returns=returns,
+            returns=settled_returns,
             fills=capacity.fills,
             universe_mask=universe,
             cost_rates=costs,
@@ -157,7 +208,7 @@ def _evaluate(
         model=DEFAULT,
     )
     base = capacity_economics(
-        returns=returns,
+        returns=settled_returns,
         fills=capacity.fills,
         universe_mask=universe,
         cost_rates=default_costs,
@@ -208,6 +259,7 @@ def run(db_path: Path, end: date) -> dict[str, object]:
     closes = _pivot(prices, "close").reindex_like(opens)
     volumes = _pivot(prices, "volume").reindex_like(opens)
     calendar = list(opens.index)
+    delisted_dates = load_delisted_dates(db_path, as_of=end)
     snapshot_dates = calendar[WARMUP::20]
     universe_at = resolve_members(
         snapshot_dates, db_path, UNIVERSE_SIZE, DEFAULT_UNIVERSE_BASIS
@@ -243,8 +295,10 @@ def run(db_path: Path, end: date) -> dict[str, object]:
             universe=universe,
             large_mask=large_mask,
             adjusted_opens=opens,
+            closes=closes,
             raw_opens=raw_opens,
             returns=forward40,
+            delisted_dates=delisted_dates,
             n_slots=n,
             holding_days=HOLDING_DAYS,
         )
@@ -258,8 +312,10 @@ def run(db_path: Path, end: date) -> dict[str, object]:
             universe=universe,
             large_mask=large_mask,
             adjusted_opens=opens,
+            closes=closes,
             raw_opens=raw_opens,
             returns=forward40,
+            delisted_dates=delisted_dates,
             n_slots=10,
             holding_days=HOLDING_DAYS,
         )
@@ -278,8 +334,10 @@ def run(db_path: Path, end: date) -> dict[str, object]:
             universe=universe,
             large_mask=large_mask,
             adjusted_opens=opens,
+            closes=closes,
             raw_opens=raw_opens,
             returns=forward_returns(opens, closes, holding_days=horizon),
+            delisted_dates=delisted_dates,
             n_slots=10,
             holding_days=horizon,
         )

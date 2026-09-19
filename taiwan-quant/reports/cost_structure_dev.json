@@ -1,4 +1,6 @@
 {
+  "validity": "invalid_pre_guard",
+  "invalid_reason": "舊版在容量排隊前以 returns.notna() 靜默排除缺 T+H 的實際候選；修正後於 3702 @ 2018-08-01 觸發 suspended_or_missing，以下數值僅保留稽核，不得作結論",
   "end": "2023-12-29",
   "capital": 400000.0,
   "seed": 20260919,
