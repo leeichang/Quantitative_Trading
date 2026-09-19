@@ -104,6 +104,7 @@
 | 文件 | 對應程式 | 核心問題 |
 |---|---|---|
 | [訊號是真的但 40 萬吃不到](2026-09-19_訊號是真的但40萬吃不到.md) | `validation/event_study.capacity_constrained_fills` | 容量、加碼、持有期、新聞四條收割路徑全部失敗；**真正的約束是零股成本** |
+| [低周轉移除了成本約束](2026-09-19_低周轉移除了成本約束.md) | `config/slippage.py`、`scripts/diagnose_low_turnover.py`、`data/twse_history.py` | 成本從每年 6.75% 降到 0.06~0.11%；而零股滑價 0.3% **比 3 倍跳動單位還高且無量測** |
 
 ---
 
