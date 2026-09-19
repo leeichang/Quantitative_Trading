@@ -240,6 +240,22 @@ def test_capacity_economics_subtracts_same_day_fill_costs() -> None:
     assert result.net_standard_deviation == pytest.approx(np.std([-0.06, 0.03], ddof=1))
 
 
+def test_capacity_economics_rejects_a_filled_position_with_no_exit_price() -> None:
+    """實際持倉缺 T+H 價格時不可被逐日平均靜默跳過。"""
+    returns = _frame([[float("nan"), 0.20], [0.30, 0.40]])
+    fills = _frame([[1.0, 0.0], [0.0, 1.0]]).astype(bool)
+    universe = _frame([[1.0, 1.0], [1.0, 1.0]]).astype(bool)
+    costs = _frame([[0.01, float("nan")], [float("nan"), 0.02]])
+
+    with pytest.raises(EventStudyError, match="實際成交.*缺少報酬"):
+        capacity_economics(
+            returns=returns,
+            fills=fills,
+            universe_mask=universe,
+            cost_rates=costs,
+        )
+
+
 # ══════════════════════════════════════════════════════════════
 # expanding_quantile_mask（禁令 1）
 # ══════════════════════════════════════════════════════════════
