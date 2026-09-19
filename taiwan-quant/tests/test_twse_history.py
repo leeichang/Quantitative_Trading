@@ -413,3 +413,67 @@ def test_parse_mi_margn_rejects_missing_table() -> None:
             {"stat": "OK", "tables": [{"title": "信用交易統計", "data": []}]},
             trade_date="2015-01-05",
         )
+
+
+# ══════════════════════════════════════════════════════════════
+# 代號過濾：現代 ETF 是 5~6 碼（2026-09-19 修正）
+# ══════════════════════════════════════════════════════════════
+
+
+def test_ordinary_security_accepts_five_and_six_digit_etfs() -> None:
+    """
+    **資料庫原本漏掉所有現代 ETF。**
+
+    `ORDINARY_CODE = ^\\d{4}$` 只收 4 碼，而台灣新的 ETF 是 5~6 碼。
+    結果 0050／0051／0056（恰好 4 碼）有資料，00712／00878／006208
+    完全不在庫裡——而我據此得出「ETF 沒幫助」的結論時，手上只有三檔。
+
+    端點本身已用 `type=ALLBUT0999` 排除權證與牛熊證，所以 4 碼規則
+    是多餘的第二道牆，而它擋掉的是 ETF 不是權證。
+    """
+    from taiwan_quant.data.twse_history import is_ordinary_security
+
+    for code in ("00712", "00878", "006208", "006203"):
+        assert is_ordinary_security(code), f"{code} 應被視為一般證券"
+
+
+def test_ordinary_security_still_accepts_plain_stocks_and_old_etfs() -> None:
+    from taiwan_quant.data.twse_history import is_ordinary_security
+
+    for code in ("2330", "2308", "0050", "0056", "0051", "2451"):
+        assert is_ordinary_security(code)
+
+
+def test_ordinary_security_still_rejects_leveraged_and_inverse() -> None:
+    """
+    **L 槓桿、R 反向必須繼續排除。**
+
+    它們每日重設，複利路徑與持有期策略的假設不相容——
+    原 docstring 的「排除槓桿型」是刻意的，不是順手。
+    """
+    from taiwan_quant.data.twse_history import is_ordinary_security
+
+    for code in ("00631L", "00632R", "00633L", "00634R"):
+        assert not is_ordinary_security(code), f"{code} 是槓桿／反向，不可納入"
+
+
+def test_ordinary_security_rejects_other_letter_suffixed_classes() -> None:
+    """期信託（U）、特殊類別（K）、特別股（4 碼 + 字母）都不是一般股票"""
+    from taiwan_quant.data.twse_history import is_ordinary_security
+
+    for code in ("00635U", "00625K", "00636K", "2887A", "2891B"):
+        assert not is_ordinary_security(code), f"{code} 不應納入"
+
+
+def test_twse_is_etf_follows_the_code_rule_not_the_trading_allowlist() -> None:
+    """
+    ⚠️ 這裡的 `is_etf` 是**代號規則**，與
+    `taiwan_quant.data.etf_universe.is_etf`（交易候選白名單）不同。
+
+    存進資料庫 ≠ 可以交易。白名單仍然只有 0050／0051／0056。
+    """
+    from taiwan_quant.data.etf_universe import is_etf as tradable_etf
+    from taiwan_quant.data.twse_history import is_etf as code_is_etf
+
+    assert code_is_etf("00878")
+    assert not tradable_etf("00878"), "白名單不可因代號規則放寬而變動"
